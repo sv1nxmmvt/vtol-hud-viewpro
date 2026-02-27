@@ -18,6 +18,9 @@ add_executable(viewpro
     src/ui/widgets/buttons/connection_button.cpp
     src/ui/widgets/buttons/telemetry_button.cpp
     src/ui/widgets/buttons/control_button.cpp
+    src/ui/widgets/panels/connection_panel.cpp
+    src/ui/widgets/panels/telemetry_panel.cpp
+    src/ui/widgets/panels/control_panel.cpp
 )
 
 target_link_libraries(viewpro PRIVATE Qt6::Widgets)
