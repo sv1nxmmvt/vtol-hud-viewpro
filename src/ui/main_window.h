@@ -21,6 +21,11 @@ private slots:
     void onStartDrag();          // Начало перетаскивания (режим окна)
     void onEndDrag();            // Конец перетаскивания (режим окна)
     void onGimbalMove(const QPoint& delta);  // Управление гимбалом (полноэкранный режим)
+    
+    // Обработка сигналов кнопок управления окном
+    void onCloseClicked();
+    void onHideClicked();
+    void onResizeClicked();
 
 private:
     bool m_fullscreen = false;

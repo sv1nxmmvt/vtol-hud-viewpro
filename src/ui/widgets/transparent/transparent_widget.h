@@ -5,6 +5,9 @@
 #include <QPoint>
 
 class QWindow;
+class CloseWidget;
+class HideWidget;
+class ResizeWidget;
 
 class TransparentWidget : public QWidget
 {
@@ -27,6 +30,11 @@ signals:
     // Полноэкранный режим
     void gimbalMove(const QPoint& delta);  // Управление гимбалом
 
+    // Сигналы кнопок управления окном
+    void closeClicked();
+    void hideClicked();
+    void resizeClicked();
+
 protected:
     bool event(QEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
@@ -36,6 +44,9 @@ protected:
     void resizeEvent(QResizeEvent* event) override;
 
 private:
+    void setupWindowButtons();
+    void updateWindowButtonsPosition();
+
     bool m_fullscreen = false;
     QTimer* m_pressTimer = nullptr;
     QPoint m_pressPosition;
@@ -46,4 +57,9 @@ private:
     bool m_timerExpired = false;
     bool m_mouseMoved = false;
     bool m_dragStarted = false;
+    
+    // Кнопки управления окном
+    CloseWidget* m_closeButton = nullptr;
+    HideWidget* m_hideButton = nullptr;
+    ResizeWidget* m_resizeButton = nullptr;
 };

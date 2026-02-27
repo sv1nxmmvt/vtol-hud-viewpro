@@ -30,6 +30,11 @@ MainWindow::MainWindow(QWidget *parent)
     // Полноэкранный режим
     connect(transparentWidget, &TransparentWidget::gimbalMove, this, &MainWindow::onGimbalMove);
     
+    // Кнопки управления окном
+    connect(transparentWidget, &TransparentWidget::closeClicked, this, &MainWindow::onCloseClicked);
+    connect(transparentWidget, &TransparentWidget::hideClicked, this, &MainWindow::onHideClicked);
+    connect(transparentWidget, &TransparentWidget::resizeClicked, this, &MainWindow::onResizeClicked);
+    
     // Устанавливаем фиксированный размер окна
     resize(960, 540);
     
@@ -114,4 +119,27 @@ void MainWindow::onGimbalMove(const QPoint& delta)
     // Например:
     // gimbal->moveYaw(delta.x() * sensitivity);
     // gimbal->movePitch(delta.y() * sensitivity);
+}
+
+// === Кнопки управления окном ===
+
+void MainWindow::onCloseClicked()
+{
+    qDebug() << "=== MainWindow: onCloseClicked ===";
+    qDebug() << "  -> Закрытие приложения (closing application)";
+    close();
+}
+
+void MainWindow::onHideClicked()
+{
+    qDebug() << "=== MainWindow: onHideClicked ===";
+    qDebug() << "  -> Скрытие окна в панель задач (minimizing to taskbar)";
+    showMinimized();
+}
+
+void MainWindow::onResizeClicked()
+{
+    qDebug() << "=== MainWindow: onResizeClicked ===";
+    qDebug() << "  -> Переключение режима окна (toggling window mode)";
+    setFullscreen(!m_fullscreen);
 }

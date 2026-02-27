@@ -1,10 +1,14 @@
 #include "transparent_widget.h"
+#include "../titles/close_widget.h"
+#include "../titles/hide_widget.h"
+#include "../titles/resize_widget.h"
 #include <QMouseEvent>
 #include <QPainter>
 #include <QDebug>
 #include <QApplication>
 #include <QWindow>
 #include <QTimer>
+#include <QHBoxLayout>
 
 TransparentWidget::TransparentWidget(QWidget *parent)
     : QWidget(parent)
@@ -26,6 +30,56 @@ TransparentWidget::TransparentWidget(QWidget *parent)
         m_timerExpired = true;
         qDebug() << "[TransparentWidget] Timer expired (200ms)";
     });
+    
+    // Создаём кнопки управления окном
+    setupWindowButtons();
+}
+
+void TransparentWidget::setupWindowButtons()
+{
+    // Кнопка закрытия
+    m_closeButton = new CloseWidget(this);
+    m_closeButton->raise();
+    connect(m_closeButton, &CloseWidget::clicked, this, [this]() {
+        qDebug() << "[TransparentWidget] Close button clicked";
+        emit closeClicked();
+    });
+    
+    // Кнопка скрытия
+    m_hideButton = new HideWidget(this);
+    m_hideButton->raise();
+    connect(m_hideButton, &HideWidget::clicked, this, [this]() {
+        qDebug() << "[TransparentWidget] Hide button clicked";
+        emit hideClicked();
+    });
+    
+    // Кнопка изменения размера
+    m_resizeButton = new ResizeWidget(this);
+    m_resizeButton->raise();
+    connect(m_resizeButton, &ResizeWidget::clicked, this, [this]() {
+        qDebug() << "[TransparentWidget] Resize button clicked";
+        emit resizeClicked();
+    });
+    
+    // Позиционируем кнопки
+    updateWindowButtonsPosition();
+}
+
+void TransparentWidget::updateWindowButtonsPosition()
+{
+    if (!m_closeButton || !m_hideButton || !m_resizeButton) {
+        return;
+    }
+    
+    int buttonWidth = 30;
+    int buttonHeight = 30;
+    int rightMargin = 0;
+    int topMargin = 0;
+    
+    // Позиционируем кнопки справа налево в верхнем правом углу
+    m_closeButton->setGeometry(width() - buttonWidth, topMargin, buttonWidth, buttonHeight);
+    m_resizeButton->setGeometry(width() - buttonWidth * 2, topMargin, buttonWidth, buttonHeight);
+    m_hideButton->setGeometry(width() - buttonWidth * 3, topMargin, buttonWidth, buttonHeight);
 }
 
 void TransparentWidget::setFullscreen(bool fullscreen)
@@ -41,6 +95,11 @@ bool TransparentWidget::event(QEvent* event)
 
 void TransparentWidget::mousePressEvent(QMouseEvent* event)
 {
+    // Игнорируем нажатия, если они были на кнопках
+    if (m_closeButton && m_closeButton->underMouse()) return;
+    if (m_hideButton && m_hideButton->underMouse()) return;
+    if (m_resizeButton && m_resizeButton->underMouse()) return;
+    
     if (event->button() == Qt::LeftButton) {
         // Сохраняем глобальную позицию мыши
         m_pressPosition = event->globalPosition().toPoint();
@@ -167,4 +226,6 @@ void TransparentWidget::paintEvent(QPaintEvent* event)
 void TransparentWidget::resizeEvent(QResizeEvent* event)
 {
     QWidget::resizeEvent(event);
+    // Обновляем позицию кнопок при изменении размера
+    updateWindowButtonsPosition();
 }
