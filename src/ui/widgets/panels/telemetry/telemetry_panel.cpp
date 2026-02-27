@@ -22,4 +22,8 @@ void TelemetryPanel::paintEvent(QPaintEvent* event)
     
     // Почти прозрачный фон
     painter.fillRect(rect(), QColor(30, 30, 30, 40));
+    
+    // Рамка панели
+    painter.setPen(QPen(QColor(150, 200, 255, 200), 2));
+    painter.drawRect(rect().adjusted(0, 0, -1, -1));
 }

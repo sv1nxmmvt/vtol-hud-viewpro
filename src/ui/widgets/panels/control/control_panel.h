@@ -2,6 +2,10 @@
 
 #include <QWidget>
 
+class CameraSubPanel;
+class LrfSubPanel;
+class MovementSubPanel;
+
 class ControlPanel : public QWidget
 {
     Q_OBJECT
@@ -14,4 +18,12 @@ public:
 
 protected:
     void paintEvent(QPaintEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
+
+private:
+    void updateSubPanelsPosition();
+
+    CameraSubPanel* m_cameraPanel = nullptr;
+    LrfSubPanel* m_lrfPanel = nullptr;
+    MovementSubPanel* m_movementPanel = nullptr;
 };

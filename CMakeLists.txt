@@ -21,6 +21,9 @@ add_executable(viewpro
     src/ui/widgets/panels/connection/connection_panel.cpp
     src/ui/widgets/panels/telemetry/telemetry_panel.cpp
     src/ui/widgets/panels/control/control_panel.cpp
+    src/ui/widgets/panels/control/subpanel_camera.cpp
+    src/ui/widgets/panels/control/subpanel_lrf.cpp
+    src/ui/widgets/panels/control/subpanel_movement.cpp
 )
 
 target_link_libraries(viewpro PRIVATE Qt6::Widgets)
