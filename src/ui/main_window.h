@@ -26,6 +26,11 @@ private slots:
     void onCloseClicked();
     void onHideClicked();
     void onResizeClicked();
+    
+    // Обработка сигналов кнопок управления подвесом
+    void onConnectionToggled(bool active);
+    void onTelemetryToggled(bool active);
+    void onControlToggled(bool active);
 
 private:
     bool m_fullscreen = false;

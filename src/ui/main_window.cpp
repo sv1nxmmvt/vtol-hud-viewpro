@@ -35,6 +35,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(transparentWidget, &TransparentWidget::hideClicked, this, &MainWindow::onHideClicked);
     connect(transparentWidget, &TransparentWidget::resizeClicked, this, &MainWindow::onResizeClicked);
     
+    // Кнопки управления подвесом
+    connect(transparentWidget, &TransparentWidget::connectionToggled, this, &MainWindow::onConnectionToggled);
+    connect(transparentWidget, &TransparentWidget::telemetryToggled, this, &MainWindow::onTelemetryToggled);
+    connect(transparentWidget, &TransparentWidget::controlToggled, this, &MainWindow::onControlToggled);
+    
     // Устанавливаем фиксированный размер окна
     resize(960, 540);
     
@@ -142,4 +147,30 @@ void MainWindow::onResizeClicked()
     qDebug() << "=== MainWindow: onResizeClicked ===";
     qDebug() << "  -> Переключение режима окна (toggling window mode)";
     setFullscreen(!m_fullscreen);
+}
+
+// === Кнопки управления подвесом ===
+
+void MainWindow::onConnectionToggled(bool active)
+{
+    qDebug() << "=== MainWindow: onConnectionToggled ===";
+    qDebug() << "  -> Подключение к подвесу (connection to gimbal):" << (active ? "ON" : "OFF");
+    // TODO: Здесь будет логика подключения/отключения от подвеса
+    // Например: gimbal->connect() / gimbal->disconnect();
+}
+
+void MainWindow::onTelemetryToggled(bool active)
+{
+    qDebug() << "=== MainWindow: onTelemetryToggled ===";
+    qDebug() << "  -> Телеметрия (telemetry):" << (active ? "ON" : "OFF");
+    // TODO: Здесь будет логика включения/выключения телеметрии
+    // Например: gimbal->enableTelemetry(active);
+}
+
+void MainWindow::onControlToggled(bool active)
+{
+    qDebug() << "=== MainWindow: onControlToggled ===";
+    qDebug() << "  -> Управление подвесом (gimbal control):" << (active ? "ON" : "OFF");
+    // TODO: Здесь будет логика включения/выключения управления подвесом
+    // Например: gimbal->enableControl(active);
 }

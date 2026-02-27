@@ -27,7 +27,7 @@ void ResizeWidget::paintEvent(QPaintEvent* event)
     if (m_hovered) {
         painter.fillRect(rect(), QColor(255, 255, 255, 200));
     } else {
-        painter.fillRect(rect(), QColor(255, 255, 255, 100));
+        painter.fillRect(rect(), QColor(255, 255, 255, 0));
     }
     
     // Рисуем квадрат (символ maximize/restore)

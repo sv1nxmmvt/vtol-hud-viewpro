@@ -8,6 +8,9 @@ class QWindow;
 class CloseWidget;
 class HideWidget;
 class ResizeWidget;
+class ConnectionButton;
+class TelemetryButton;
+class ControlButton;
 
 class TransparentWidget : public QWidget
 {
@@ -34,6 +37,11 @@ signals:
     void closeClicked();
     void hideClicked();
     void resizeClicked();
+    
+    // Сигналы кнопок управления подвесом
+    void connectionToggled(bool active);
+    void telemetryToggled(bool active);
+    void controlToggled(bool active);
 
 protected:
     bool event(QEvent* event) override;
@@ -46,6 +54,8 @@ protected:
 private:
     void setupWindowButtons();
     void updateWindowButtonsPosition();
+    void setupGimbalButtons();
+    void updateGimbalButtonsPosition();
 
     bool m_fullscreen = false;
     QTimer* m_pressTimer = nullptr;
@@ -62,4 +72,9 @@ private:
     CloseWidget* m_closeButton = nullptr;
     HideWidget* m_hideButton = nullptr;
     ResizeWidget* m_resizeButton = nullptr;
+    
+    // Кнопки управления подвесом
+    ConnectionButton* m_connectionButton = nullptr;
+    TelemetryButton* m_telemetryButton = nullptr;
+    ControlButton* m_controlButton = nullptr;
 };

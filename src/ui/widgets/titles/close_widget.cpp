@@ -27,7 +27,7 @@ void CloseWidget::paintEvent(QPaintEvent* event)
     if (m_hovered) {
         painter.fillRect(rect(), QColor(232, 17, 35, 200));
     } else {
-        painter.fillRect(rect(), QColor(232, 17, 35, 100));
+        painter.fillRect(rect(), QColor(232, 17, 35, 0));
     }
     
     // Рисуем крестик

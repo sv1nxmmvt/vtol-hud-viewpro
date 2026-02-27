@@ -2,6 +2,9 @@
 #include "../titles/close_widget.h"
 #include "../titles/hide_widget.h"
 #include "../titles/resize_widget.h"
+#include "../buttons/connection_button.h"
+#include "../buttons/telemetry_button.h"
+#include "../buttons/control_button.h"
 #include <QMouseEvent>
 #include <QPainter>
 #include <QDebug>
@@ -33,6 +36,9 @@ TransparentWidget::TransparentWidget(QWidget *parent)
     
     // Создаём кнопки управления окном
     setupWindowButtons();
+    
+    // Создаём кнопки управления подвесом
+    setupGimbalButtons();
 }
 
 void TransparentWidget::setupWindowButtons()
@@ -70,16 +76,68 @@ void TransparentWidget::updateWindowButtonsPosition()
     if (!m_closeButton || !m_hideButton || !m_resizeButton) {
         return;
     }
-    
+
     int buttonWidth = 30;
     int buttonHeight = 30;
     int rightMargin = 0;
     int topMargin = 0;
-    
+
     // Позиционируем кнопки справа налево в верхнем правом углу
     m_closeButton->setGeometry(width() - buttonWidth, topMargin, buttonWidth, buttonHeight);
     m_resizeButton->setGeometry(width() - buttonWidth * 2, topMargin, buttonWidth, buttonHeight);
     m_hideButton->setGeometry(width() - buttonWidth * 3, topMargin, buttonWidth, buttonHeight);
+}
+
+void TransparentWidget::setupGimbalButtons()
+{
+    // Кнопка подключения
+    m_connectionButton = new ConnectionButton(this);
+    m_connectionButton->raise();
+    connect(m_connectionButton, &ConnectionButton::toggled, this, [this](bool active) {
+        qDebug() << "[TransparentWidget] Connection button toggled:" << active;
+        emit connectionToggled(active);
+    });
+    
+    // Кнопка телеметрии
+    m_telemetryButton = new TelemetryButton(this);
+    m_telemetryButton->raise();
+    connect(m_telemetryButton, &TelemetryButton::toggled, this, [this](bool active) {
+        qDebug() << "[TransparentWidget] Telemetry button toggled:" << active;
+        emit telemetryToggled(active);
+    });
+    
+    // Кнопка управления
+    m_controlButton = new ControlButton(this);
+    m_controlButton->raise();
+    connect(m_controlButton, &ControlButton::toggled, this, [this](bool active) {
+        qDebug() << "[TransparentWidget] Control button toggled:" << active;
+        emit controlToggled(active);
+    });
+    
+    // Позиционируем кнопки
+    updateGimbalButtonsPosition();
+}
+
+void TransparentWidget::updateGimbalButtonsPosition()
+{
+    if (!m_connectionButton || !m_telemetryButton || !m_controlButton) {
+        return;
+    }
+    
+    int buttonSize = 50;
+    int rightMargin = 10;
+    int spacing = 10;
+    
+    // Вычисляем общую высоту всех кнопок с отступами
+    int totalHeight = buttonSize * 3 + spacing * 2;
+    
+    // Центрируем по вертикали
+    int startY = (height() - totalHeight) / 2;
+    int x = width() - buttonSize - rightMargin;
+    
+    m_connectionButton->setGeometry(x, startY, buttonSize, buttonSize);
+    m_telemetryButton->setGeometry(x, startY + buttonSize + spacing, buttonSize, buttonSize);
+    m_controlButton->setGeometry(x, startY + (buttonSize + spacing) * 2, buttonSize, buttonSize);
 }
 
 void TransparentWidget::setFullscreen(bool fullscreen)
@@ -228,4 +286,5 @@ void TransparentWidget::resizeEvent(QResizeEvent* event)
     QWidget::resizeEvent(event);
     // Обновляем позицию кнопок при изменении размера
     updateWindowButtonsPosition();
+    updateGimbalButtonsPosition();
 }
