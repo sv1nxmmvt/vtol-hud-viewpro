@@ -1,6 +1,6 @@
 #include "control_panel.h"
 #include "camera/subpanel_camera.h"
-#include "subpanel_lrf.h"
+#include "lrf/subpanel_lrf.h"
 #include "subpanel_movement.h"
 #include <QPainter>
 #include <QResizeEvent>
@@ -59,22 +59,21 @@ void ControlPanel::updateSubPanelsPosition()
     }
     
     int subPanelWidth = width() - 10;
-    int subPanelHeight = (height() - 20) / 3;
     int spacing = 5;
     int margin = 5;
     
     int y = margin;
     
-    // Camera подпанель (увеличенная высота)
-    m_cameraPanel->setGeometry(margin, y, subPanelWidth, 140);
-    y += 140 + spacing;
+    // Camera подпанель (уменьшенная высота)
+    m_cameraPanel->setGeometry(margin, y, subPanelWidth, 75);
+    y += 75 + spacing;
     
-    // LRF подпанель
-    m_lrfPanel->setGeometry(margin, y, subPanelWidth, subPanelHeight - spacing);
-    y += subPanelHeight;
+    // LRF подпанель (компактная, все в одну строку)
+    m_lrfPanel->setGeometry(margin, y, subPanelWidth, 45);
+    y += 45 + spacing;
     
-    // Movement подпанель
-    m_movementPanel->setGeometry(margin, y, subPanelWidth, subPanelHeight);
+    // Movement подпанель (оставшаяся высота)
+    m_movementPanel->setGeometry(margin, y, subPanelWidth, height() - y - margin);
 }
 
 void ControlPanel::mousePressEvent(QMouseEvent* event)

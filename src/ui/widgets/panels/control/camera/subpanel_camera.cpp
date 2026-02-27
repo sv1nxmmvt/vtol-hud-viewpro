@@ -15,11 +15,11 @@ CameraSubPanel::CameraSubPanel(QWidget *parent)
     
     // Создаём тумблер Sony/TP
     m_sourceToggle = new ToggleSwitch(this, "SONY", "TP");
-    connect(m_sourceToggle, &ToggleSwitch::toggled, this, [this](bool isSony) {
-        m_isSony = isSony;
+    connect(m_sourceToggle, &ToggleSwitch::toggled, this, [this](bool isTP) {
+        m_isSony = !isTP;  // Инвертируем: true = TP, false = SONY
         qDebug() << "[CameraSubPanel] Source toggled to:" << (m_isSony ? "SONY" : "TP");
         emit sourceToggled(m_isSony);
-        updateZoomButtons();
+        update();  // Перерисовать для обновления метки OPT/DIG ZOOM
     });
     
     // Создаём тумблер PIP
@@ -65,13 +65,13 @@ void CameraSubPanel::paintEvent(QPaintEvent* event)
     painter.setPen(QPen(QColor(255, 200, 100, 150), 1));
     painter.drawRect(rect().adjusted(0, 0, -1, -1));
     
-    // Заголовок
-    painter.setPen(QColor(255, 200, 100));
+    // Метка OPT/DIG ZOOM - слева от кнопок
+    QString zoomType = m_isSony ? "OPT ZOOM" : "DIG ZOOM";
+    painter.setPen(QColor(200, 200, 200));
     QFont font = painter.font();
-    font.setBold(true);
-    font.setPointSize(10);
+    font.setPointSize(8);
     painter.setFont(font);
-    painter.drawText(rect().adjusted(5, 5, -5, 25), Qt::AlignCenter, "CAMERA");
+    painter.drawText(10, 58, zoomType);
 }
 
 void CameraSubPanel::resizeEvent(QResizeEvent* event)
@@ -85,20 +85,18 @@ void CameraSubPanel::updateControlsPosition()
     if (!m_sourceToggle || !m_pipToggle || !m_zoomPlusButton || !m_zoomMinusButton) {
         return;
     }
-    
-    int y = 35;
-    int rowHeight = 30;
+
+    int y = 5;  // Подняли тумблеры на место заголовка CAMERA
     int leftMargin = 10;
-    
-    // Тумблер Sony/TP
+    int rightMargin = 10;
+
+    // Тумблер Sony/TP - слева
     m_sourceToggle->move(leftMargin, y);
-    y += rowHeight;
-    
-    // Тумблер PIP
-    m_pipToggle->move(leftMargin, y);
-    y += rowHeight + 10;
-    
-    // Кнопки зума
+
+    // Тумблер PIP - справа
+    m_pipToggle->move(width() - m_pipToggle->width() - rightMargin, y);
+
+    // Кнопки зума - под тумблерами (минимальный отступ)
     updateZoomButtons();
 }
 
@@ -107,18 +105,16 @@ void CameraSubPanel::updateZoomButtons()
     if (!m_zoomPlusButton || !m_zoomMinusButton) {
         return;
     }
-    
-    int y = 35 + 30 + 30 + 15;
-    int leftMargin = 10;
-    
-    // Метка
-    QString zoomType = m_isSony ? "OPT" : "DIG";
-    
-    // Кнопка минус
-    m_zoomMinusButton->move(leftMargin, y);
-    
-    // Кнопка плюс
-    m_zoomPlusButton->move(leftMargin + 55, y);
+
+    int y = 40;  // Отступ от тумблеров
+    int labelWidth = 70;  // Ширина метки OPT/DIG ZOOM
+    int leftMargin = 4;
+
+    // Кнопка минус - справа от метки (сдвинута влево на 2px)
+    m_zoomMinusButton->move(leftMargin + labelWidth + 3, y);
+
+    // Кнопка плюс - справа от кнопки минус
+    m_zoomPlusButton->move(leftMargin + labelWidth + 3 + m_zoomMinusButton->width() + 3, y);
 }
 
 void CameraSubPanel::mousePressEvent(QMouseEvent* event)
