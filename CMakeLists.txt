@@ -19,6 +19,9 @@ add_executable(viewpro
     src/ui/widgets/buttons/telemetry_button.cpp
     src/ui/widgets/buttons/control_button.cpp
     src/ui/widgets/panels/connection/connection_panel.cpp
+    src/ui/widgets/panels/connection/ip_address_input.cpp
+    src/ui/widgets/panels/connection/port_input.cpp
+    src/ui/widgets/panels/connection/connect_toggle.cpp
     src/ui/widgets/panels/telemetry/telemetry_panel.cpp
     src/ui/widgets/panels/control/control_panel.cpp
     src/ui/widgets/panels/control/camera/subpanel_camera.cpp

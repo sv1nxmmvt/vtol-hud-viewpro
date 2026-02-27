@@ -184,10 +184,10 @@ void TransparentWidget::updatePanelsPosition()
         return;
     }
     
-    int connectionPanelWidth = 200;
-    int connectionPanelHeight = 120;
+    int connectionPanelWidth = 310;  // Увеличенная ширина для полей ввода
+    int connectionPanelHeight = 70;  // Уменьшенная высота
     int margin = 10;
-    
+
     // Панель подключения - справа сверху (под кнопками управления окном)
     m_connectionPanel->setGeometry(
         width() - connectionPanelWidth - margin,
