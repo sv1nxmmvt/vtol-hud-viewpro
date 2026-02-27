@@ -5,9 +5,9 @@
 #include "../buttons/connection_button.h"
 #include "../buttons/telemetry_button.h"
 #include "../buttons/control_button.h"
-#include "../panels/connection_panel.h"
-#include "../panels/telemetry_panel.h"
-#include "../panels/control_panel.h"
+#include "../panels/connection/connection_panel.h"
+#include "../panels/telemetry/telemetry_panel.h"
+#include "../panels/control/control_panel.h"
 #include <QMouseEvent>
 #include <QPainter>
 #include <QDebug>
