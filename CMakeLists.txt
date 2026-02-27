@@ -25,7 +25,10 @@ add_executable(viewpro
     src/ui/widgets/panels/control/camera/toggle_switch.cpp
     src/ui/widgets/panels/control/camera/zoom_button.cpp
     src/ui/widgets/panels/control/lrf/subpanel_lrf.cpp
-    src/ui/widgets/panels/control/subpanel_movement.cpp
+    src/ui/widgets/panels/control/movement/subpanel_movement.cpp
+    src/ui/widgets/panels/control/movement/toggle_button.cpp
+    src/ui/widgets/panels/control/movement/action_button.cpp
+    src/ui/widgets/panels/control/movement/arrow_button.cpp
 )
 
 target_link_libraries(viewpro PRIVATE Qt6::Widgets)

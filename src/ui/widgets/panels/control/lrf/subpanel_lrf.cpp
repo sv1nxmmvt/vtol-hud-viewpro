@@ -51,7 +51,7 @@ void LrfSubPanel::paintEvent(QPaintEvent* event)
     font.setBold(true);
     font.setPointSize(10);
     painter.setFont(font);
-    painter.drawText(10, 24, "LRF");
+    painter.drawText(10, 27, "LRF");
 }
 
 void LrfSubPanel::resizeEvent(QResizeEvent* event)
@@ -66,14 +66,14 @@ void LrfSubPanel::updateControlsPosition()
         return;
     }
     
-    int y = 5;
+    int y = 8;
     int leftMargin = 45;  // Отступ от надписи LRF
     
     // Тумблер ONCE/LONG
     m_modeToggle->move(leftMargin, y);
     
     // Кнопка GET - справа от тумблера
-    m_getButton->move(leftMargin + m_modeToggle->width() + 10, y);
+    m_getButton->move(leftMargin + m_modeToggle->width() + 5, y);
 }
 
 // Методы для отправки команд подвесу

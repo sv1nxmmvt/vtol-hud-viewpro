@@ -208,7 +208,7 @@ void TransparentWidget::updatePanelsPosition()
     );
 
     int controlPanelWidth = 200;
-    int controlPanelHeight = 175;  // Увеличенная высота для LRF подпанели
+    int controlPanelHeight = 220;  // Увеличенная высота для Movement подпанели
 
     // Панель управления - слева снизу
     m_controlPanel->setGeometry(

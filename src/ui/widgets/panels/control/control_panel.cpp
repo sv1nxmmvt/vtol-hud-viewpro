@@ -1,7 +1,7 @@
 #include "control_panel.h"
 #include "camera/subpanel_camera.h"
 #include "lrf/subpanel_lrf.h"
-#include "subpanel_movement.h"
+#include "movement/subpanel_movement.h"
 #include <QPainter>
 #include <QResizeEvent>
 
@@ -64,15 +64,15 @@ void ControlPanel::updateSubPanelsPosition()
     
     int y = margin;
     
-    // Camera подпанель (уменьшенная высота)
+    // Camera подпанель
     m_cameraPanel->setGeometry(margin, y, subPanelWidth, 75);
     y += 75 + spacing;
     
-    // LRF подпанель (компактная, все в одну строку)
+    // LRF подпанель
     m_lrfPanel->setGeometry(margin, y, subPanelWidth, 45);
     y += 45 + spacing;
     
-    // Movement подпанель (оставшаяся высота)
+    // Movement подпанель (увеличенная высота)
     m_movementPanel->setGeometry(margin, y, subPanelWidth, height() - y - margin);
 }
 
