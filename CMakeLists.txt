@@ -21,7 +21,9 @@ add_executable(viewpro
     src/ui/widgets/panels/connection/connection_panel.cpp
     src/ui/widgets/panels/telemetry/telemetry_panel.cpp
     src/ui/widgets/panels/control/control_panel.cpp
-    src/ui/widgets/panels/control/subpanel_camera.cpp
+    src/ui/widgets/panels/control/camera/subpanel_camera.cpp
+    src/ui/widgets/panels/control/camera/toggle_switch.cpp
+    src/ui/widgets/panels/control/camera/zoom_button.cpp
     src/ui/widgets/panels/control/subpanel_lrf.cpp
     src/ui/widgets/panels/control/subpanel_movement.cpp
 )

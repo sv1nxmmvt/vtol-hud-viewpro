@@ -1,5 +1,5 @@
 #include "control_panel.h"
-#include "subpanel_camera.h"
+#include "camera/subpanel_camera.h"
 #include "subpanel_lrf.h"
 #include "subpanel_movement.h"
 #include <QPainter>
@@ -10,7 +10,7 @@ ControlPanel::ControlPanel(QWidget *parent)
 {
     setAttribute(Qt::WA_TranslucentBackground);
     setMouseTracking(true);
-    setAttribute(Qt::WA_TransparentForMouseEvents, true);
+    // Убрали WA_TransparentForMouseEvents, чтобы кнопки могли получать события
     
     // Создаём подпанели как дочерние элементы
     m_cameraPanel = new CameraSubPanel(this);
@@ -65,9 +65,9 @@ void ControlPanel::updateSubPanelsPosition()
     
     int y = margin;
     
-    // Camera подпанель
-    m_cameraPanel->setGeometry(margin, y, subPanelWidth, subPanelHeight - spacing);
-    y += subPanelHeight;
+    // Camera подпанель (увеличенная высота)
+    m_cameraPanel->setGeometry(margin, y, subPanelWidth, 140);
+    y += 140 + spacing;
     
     // LRF подпанель
     m_lrfPanel->setGeometry(margin, y, subPanelWidth, subPanelHeight - spacing);
@@ -75,4 +75,16 @@ void ControlPanel::updateSubPanelsPosition()
     
     // Movement подпанель
     m_movementPanel->setGeometry(margin, y, subPanelWidth, subPanelHeight);
+}
+
+void ControlPanel::mousePressEvent(QMouseEvent* event)
+{
+    // Блокируем распространение события к родительским виджетам
+    event->accept();
+}
+
+void ControlPanel::mouseReleaseEvent(QMouseEvent* event)
+{
+    // Блокируем распространение события к родительским виджетам
+    event->accept();
 }

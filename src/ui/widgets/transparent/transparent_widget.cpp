@@ -208,8 +208,8 @@ void TransparentWidget::updatePanelsPosition()
     );
 
     int controlPanelWidth = 200;
-    int controlPanelHeight = 150;
-    
+    int controlPanelHeight = 220;  // Увеличенная высота для размещения всех элементов
+
     // Панель управления - слева снизу
     m_controlPanel->setGeometry(
         margin,
