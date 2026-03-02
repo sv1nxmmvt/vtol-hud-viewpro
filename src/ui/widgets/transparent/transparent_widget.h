@@ -11,9 +11,6 @@ class ResizeWidget;
 class ConnectionButton;
 class TelemetryButton;
 class ControlButton;
-class ConnectionPanel;
-class TelemetryPanel;
-class ControlPanel;
 
 class TransparentWidget : public QWidget
 {
@@ -59,9 +56,6 @@ private:
     void updateWindowButtonsPosition();
     void setupGimbalButtons();
     void updateGimbalButtonsPosition();
-    void setupPanels();
-    void updatePanelsPosition();
-    void updatePanelsVisibility();
 
     bool m_fullscreen = false;
     QTimer* m_pressTimer = nullptr;
@@ -83,9 +77,4 @@ private:
     ConnectionButton* m_connectionButton = nullptr;
     TelemetryButton* m_telemetryButton = nullptr;
     ControlButton* m_controlButton = nullptr;
-    
-    // Панели
-    ConnectionPanel* m_connectionPanel = nullptr;
-    TelemetryPanel* m_telemetryPanel = nullptr;
-    ControlPanel* m_controlPanel = nullptr;
 };

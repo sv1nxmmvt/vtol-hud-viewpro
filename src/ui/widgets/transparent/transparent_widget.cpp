@@ -5,9 +5,6 @@
 #include "../buttons/connection_button.h"
 #include "../buttons/telemetry_button.h"
 #include "../buttons/control_button.h"
-#include "../panels/connection/connection_panel.h"
-#include "../panels/telemetry/telemetry_panel.h"
-#include "../panels/control/control_panel.h"
 #include <QMouseEvent>
 #include <QPainter>
 #include <QDebug>
@@ -39,12 +36,9 @@ TransparentWidget::TransparentWidget(QWidget *parent)
     
     // Создаём кнопки управления окном
     setupWindowButtons();
-    
+
     // Создаём кнопки управления подвесом
     setupGimbalButtons();
-    
-    // Создаём панели
-    setupPanels();
 }
 
 void TransparentWidget::setupWindowButtons()
@@ -144,92 +138,6 @@ void TransparentWidget::updateGimbalButtonsPosition()
     m_connectionButton->setGeometry(x, startY, buttonSize, buttonSize);
     m_telemetryButton->setGeometry(x, startY + buttonSize + spacing, buttonSize, buttonSize);
     m_controlButton->setGeometry(x, startY + (buttonSize + spacing) * 2, buttonSize, buttonSize);
-}
-
-void TransparentWidget::setupPanels()
-{
-    // Панель подключения (справа сверху)
-    m_connectionPanel = new ConnectionPanel(this);
-    m_connectionPanel->raise();
-    m_connectionPanel->setVisible(false);
-    
-    // Панель телеметрии (справа снизу)
-    m_telemetryPanel = new TelemetryPanel(this);
-    m_telemetryPanel->raise();
-    m_telemetryPanel->setVisible(false);
-    
-    // Панель управления (слева снизу)
-    m_controlPanel = new ControlPanel(this);
-    m_controlPanel->raise();
-    m_controlPanel->setVisible(false);
-    
-    // Позиционируем панели
-    updatePanelsPosition();
-    
-    // Подключаем сигналы кнопок к видимости панелей
-    connect(m_connectionButton, &ConnectionButton::toggled, this, [this](bool active) {
-        m_connectionPanel->setVisible(active);
-    });
-    connect(m_telemetryButton, &TelemetryButton::toggled, this, [this](bool active) {
-        m_telemetryPanel->setVisible(active);
-    });
-    connect(m_controlButton, &ControlButton::toggled, this, [this](bool active) {
-        m_controlPanel->setVisible(active);
-    });
-}
-
-void TransparentWidget::updatePanelsPosition()
-{
-    if (!m_connectionPanel || !m_telemetryPanel || !m_controlPanel) {
-        return;
-    }
-    
-    int connectionPanelWidth = 310;  // Увеличенная ширина для полей ввода
-    int connectionPanelHeight = 70;  // Уменьшенная высота
-    int margin = 10;
-
-    // Панель подключения - справа сверху (под кнопками управления окном)
-    m_connectionPanel->setGeometry(
-        width() - connectionPanelWidth - margin,
-        40,  // Отступ от кнопок управления окном
-        connectionPanelWidth,
-        connectionPanelHeight
-    );
-
-    int telemetryPanelWidth = 200;
-    int telemetryPanelHeight = 150;
-    
-    // Панель телеметрии - справа снизу
-    m_telemetryPanel->setGeometry(
-        width() - telemetryPanelWidth - margin,
-        height() - telemetryPanelHeight - margin,
-        telemetryPanelWidth,
-        telemetryPanelHeight
-    );
-
-    int controlPanelWidth = 200;
-    int controlPanelHeight = 220;  // Увеличенная высота для Movement подпанели
-
-    // Панель управления - слева снизу
-    m_controlPanel->setGeometry(
-        margin,
-        height() - controlPanelHeight - margin,
-        controlPanelWidth,
-        controlPanelHeight
-    );
-}
-
-void TransparentWidget::updatePanelsVisibility()
-{
-    if (m_connectionPanel && m_connectionButton) {
-        m_connectionPanel->setVisible(m_connectionButton->isActive());
-    }
-    if (m_telemetryPanel && m_telemetryButton) {
-        m_telemetryPanel->setVisible(m_telemetryButton->isActive());
-    }
-    if (m_controlPanel && m_controlButton) {
-        m_controlPanel->setVisible(m_controlButton->isActive());
-    }
 }
 
 void TransparentWidget::setFullscreen(bool fullscreen)
@@ -452,8 +360,7 @@ void TransparentWidget::paintEvent(QPaintEvent* event)
 void TransparentWidget::resizeEvent(QResizeEvent* event)
 {
     QWidget::resizeEvent(event);
-    // Обновляем позицию кнопок и панелей при изменении размера
+    // Обновляем позицию кнопок при изменении размера
     updateWindowButtonsPosition();
     updateGimbalButtonsPosition();
-    updatePanelsPosition();
 }
