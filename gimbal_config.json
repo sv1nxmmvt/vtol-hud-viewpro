@@ -1,0 +1,8 @@
+{
+  "type": "tcp",
+  "ip": "192.168.2.119",
+  "port": 2000,
+  "video_port": 554,
+  "serial_port": "",
+  "baud_rate": 115200
+}

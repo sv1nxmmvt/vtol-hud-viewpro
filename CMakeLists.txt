@@ -7,6 +7,13 @@ set(CMAKE_AUTOMOC ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
+# Поиск GStreamer
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0 gstreamer-app-1.0 gstreamer-video-1.0)
+
+# Путь к SDK
+set(VIEWLINK_SDK_DIR "${CMAKE_SOURCE_DIR}/sdk")
+
 add_executable(viewpro
     src/main.cpp
     src/ui/main_window.cpp
@@ -18,6 +25,32 @@ add_executable(viewpro
     src/ui/widgets/buttons/connection_button.cpp
     src/ui/widgets/buttons/telemetry_button.cpp
     src/ui/widgets/buttons/control_button.cpp
+    src/gimbal/gimbal.cpp
+    src/gimbal/video_stream.cpp
+    src/gimbal/config_manager.cpp
+    src/gimbal/viewlink_stub.cpp
 )
 
-target_link_libraries(viewpro PRIVATE Qt6::Widgets)
+target_include_directories(viewpro PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${VIEWLINK_SDK_DIR}
+    ${GSTREAMER_INCLUDE_DIRS}
+)
+
+target_link_libraries(viewpro PRIVATE
+    Qt6::Widgets
+    ${GSTREAMER_LIBRARIES}
+    ${VIEWLINK_SDK_DIR}/libViewLink.so
+)
+
+target_link_directories(viewpro PRIVATE
+    ${GSTREAMER_LIBRARY_DIRS}
+    ${VIEWLINK_SDK_DIR}
+)
+
+# Копирование файла конфигурации в директорию сборки
+configure_file(
+    ${CMAKE_SOURCE_DIR}/gimbal_config.json
+    ${CMAKE_BINARY_DIR}/gimbal_config.json
+    COPYONLY
+)

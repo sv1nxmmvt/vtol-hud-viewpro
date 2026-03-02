@@ -7,6 +7,8 @@
 #include <gst/app/gstappsink.h>
 #include <gst/video/video.h>
 
+#include <sstream>
+
 namespace gimbal {
 
 struct VideoStream::Impl {
@@ -28,6 +30,23 @@ VideoStream::~VideoStream() {
     stop();
 }
 
+std::string VideoStream::buildRtspUrl(
+    const ConnectionConfig& config,
+    const std::string& user,
+    const std::string& password
+) {
+    // Формат: rtsp://user:password@ip:videoPort/
+    std::ostringstream oss;
+    oss << "rtsp://" << user << ":" << password << "@" 
+        << config.ip << ":" << config.videoPort << "/";
+    return oss.str();
+}
+
+bool VideoStream::start(const ConnectionConfig& config, int latency) {
+    std::string rtspUrl = buildRtspUrl(config);
+    return start(rtspUrl, latency);
+}
+
 bool VideoStream::start(const std::string& rtspUrl, int latency) {
     if (m_impl->pipeline) {
         stop();
@@ -40,8 +59,8 @@ bool VideoStream::start(const std::string& rtspUrl, int latency) {
 
     // Создаём пайплайн
     // rtspsrc location=rtsp://... latency=30 ! rtph264depay ! h264parse ! avdec_h264 ! videoconvert ! appsink sync=0
-    std::string pipelineStr = 
-        "rtspsrc location=" + rtspUrl + " latency=" + std::to_string(latency) + 
+    std::string pipelineStr =
+        "rtspsrc location=" + rtspUrl + " latency=" + std::to_string(latency) +
         " ! rtph264depay ! h264parse ! avdec_h264 ! videoconvert ! appsink name=sink sync=0 emit-signals=true";
 
     qDebug() << "VideoStream: pipeline:" << QString::fromStdString(pipelineStr);
@@ -147,9 +166,9 @@ GstFlowReturn VideoStream::onNewSample(GstAppSink* sink, gpointer userData) {
 
     // Создаём QImage из данных
     // GStreamer использует формат I420/YUV, videoconvert конвертирует в RGB
-    QImage frame(mapInfo.data, width, height, GST_VIDEO_INFO_PLANE_STRIDE(&videoInfo, 0), 
+    QImage frame(mapInfo.data, width, height, GST_VIDEO_INFO_PLANE_STRIDE(&videoInfo, 0),
                  QImage::Format_RGB888);
-    
+
     // Копируем кадр (т.к. буфер будет освобождён)
     QImage frameCopy = frame.copy();
 
