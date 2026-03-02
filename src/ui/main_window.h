@@ -35,7 +35,6 @@ private slots:
     void onResizeClicked();
 
     // Обработка сигналов кнопок управления подвесом
-    void onConnectionToggled(bool active);
     void onTelemetryToggled(bool active);
     void onControlToggled(bool active);
 
@@ -57,6 +56,8 @@ private:
     gimbal::ConnectionConfig m_config;
 
     bool m_isConnected = false;
+    bool m_connectionPending = false;
+    QTimer* m_connectionTimeoutTimer = nullptr;
 
     // Инициализация компонентов подвеса
     void initGimbalComponents();

@@ -90,14 +90,6 @@ void TransparentWidget::updateWindowButtonsPosition()
 
 void TransparentWidget::setupGimbalButtons()
 {
-    // Кнопка подключения
-    m_connectionButton = new ConnectionButton(this);
-    m_connectionButton->raise();
-    connect(m_connectionButton, &ConnectionButton::toggled, this, [this](bool active) {
-        qDebug() << "[TransparentWidget] Connection button toggled:" << active;
-        emit connectionToggled(active);
-    });
-    
     // Кнопка телеметрии
     m_telemetryButton = new TelemetryButton(this);
     m_telemetryButton->raise();
@@ -105,7 +97,7 @@ void TransparentWidget::setupGimbalButtons()
         qDebug() << "[TransparentWidget] Telemetry button toggled:" << active;
         emit telemetryToggled(active);
     });
-    
+
     // Кнопка управления
     m_controlButton = new ControlButton(this);
     m_controlButton->raise();
@@ -113,31 +105,30 @@ void TransparentWidget::setupGimbalButtons()
         qDebug() << "[TransparentWidget] Control button toggled:" << active;
         emit controlToggled(active);
     });
-    
+
     // Позиционируем кнопки
     updateGimbalButtonsPosition();
 }
 
 void TransparentWidget::updateGimbalButtonsPosition()
 {
-    if (!m_connectionButton || !m_telemetryButton || !m_controlButton) {
+    if (!m_telemetryButton || !m_controlButton) {
         return;
     }
-    
+
     int buttonSize = 50;
     int rightMargin = 10;
     int spacing = 10;
-    
+
     // Вычисляем общую высоту всех кнопок с отступами
-    int totalHeight = buttonSize * 3 + spacing * 2;
-    
+    int totalHeight = buttonSize * 2 + spacing;
+
     // Центрируем по вертикали
     int startY = (height() - totalHeight) / 2;
     int x = width() - buttonSize - rightMargin;
-    
-    m_connectionButton->setGeometry(x, startY, buttonSize, buttonSize);
-    m_telemetryButton->setGeometry(x, startY + buttonSize + spacing, buttonSize, buttonSize);
-    m_controlButton->setGeometry(x, startY + (buttonSize + spacing) * 2, buttonSize, buttonSize);
+
+    m_telemetryButton->setGeometry(x, startY, buttonSize, buttonSize);
+    m_controlButton->setGeometry(x, startY + buttonSize + spacing, buttonSize, buttonSize);
 }
 
 void TransparentWidget::setFullscreen(bool fullscreen)
@@ -174,10 +165,6 @@ void TransparentWidget::mousePressEvent(QMouseEvent* event)
     }
 
     // Игнорируем нажатия, если они были на кнопках управления подвесом
-    if (m_connectionButton && m_connectionButton->geometry().contains(pos)) {
-        m_pressIgnored = true;
-        return;
-    }
     if (m_telemetryButton && m_telemetryButton->geometry().contains(pos)) {
         m_pressIgnored = true;
         return;
@@ -235,11 +222,6 @@ void TransparentWidget::mouseReleaseEvent(QMouseEvent* event)
         return;
     }
     if (m_resizeButton && m_resizeButton->geometry().contains(pos)) {
-        m_pressIgnored = true;
-        event->ignore();
-        return;
-    }
-    if (m_connectionButton && m_connectionButton->geometry().contains(pos)) {
         m_pressIgnored = true;
         event->ignore();
         return;
@@ -313,11 +295,6 @@ void TransparentWidget::mouseMoveEvent(QMouseEvent* event)
         return;
     }
     if (m_resizeButton && m_resizeButton->geometry().contains(pos)) {
-        m_pressIgnored = true;
-        event->ignore();
-        return;
-    }
-    if (m_connectionButton && m_connectionButton->geometry().contains(pos)) {
         m_pressIgnored = true;
         event->ignore();
         return;

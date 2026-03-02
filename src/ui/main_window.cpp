@@ -20,6 +20,17 @@ MainWindow::MainWindow(QWidget *parent)
     // Убираем стандартную рамку окна
     setWindowFlags(Qt::FramelessWindowHint);
 
+    // Создаём таймер таймаута подключения
+    m_connectionTimeoutTimer = new QTimer(this);
+    m_connectionTimeoutTimer->setSingleShot(true);
+    connect(m_connectionTimeoutTimer, &QTimer::timeout, this, [this]() {
+        if (m_connectionPending) {
+            qWarning() << "MainWindow: connection timeout - gimbal not responding";
+            m_connectionPending = false;
+            // Продолжаем работу без подключения
+        }
+    });
+
     // Инициализируем компоненты подвеса
     initGimbalComponents();
 
@@ -46,7 +57,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(transparentWidget, &TransparentWidget::resizeClicked, this, &MainWindow::onResizeClicked);
 
     // Кнопки управления подвесом
-    connect(transparentWidget, &TransparentWidget::connectionToggled, this, &MainWindow::onConnectionToggled);
     connect(transparentWidget, &TransparentWidget::telemetryToggled, this, &MainWindow::onTelemetryToggled);
     connect(transparentWidget, &TransparentWidget::controlToggled, this, &MainWindow::onControlToggled);
 
@@ -60,6 +70,12 @@ MainWindow::MainWindow(QWidget *parent)
     resize(960, 540);
 
     qDebug() << "MainWindow: initialized, window size:" << size();
+    
+    // Авто-подключение к подвесу при запуске
+    QTimer::singleShot(500, this, [this]() {
+        qDebug() << "MainWindow: auto-connecting to gimbal...";
+        connectToGimbal();
+    });
 }
 
 MainWindow::~MainWindow() {
@@ -105,6 +121,9 @@ void MainWindow::initGimbalComponents() {
 }
 
 void MainWindow::cleanupGimbalComponents() {
+    if (m_connectionTimeoutTimer) {
+        m_connectionTimeoutTimer->stop();
+    }
     m_gimbal.reset();
     m_videoStream.reset();
     m_configManager.reset();
@@ -113,48 +132,41 @@ void MainWindow::cleanupGimbalComponents() {
 }
 
 bool MainWindow::connectToGimbal() {
-    qDebug() << "MainWindow: === CONNECTING TO GIMBAL ===";
+    if (m_connectionPending) {
+        qDebug() << "MainWindow: connection already in progress";
+        return false;
+    }
     
+    qDebug() << "MainWindow: === CONNECTING TO GIMBAL ===";
+
     if (!m_gimbal) {
         qCritical() << "MainWindow: [ERROR] gimbal not initialized";
         return false;
     }
 
-    qDebug() << "MainWindow: [CONFIG] target:" << QString::fromStdString(m_config.ip) 
+    qDebug() << "MainWindow: [CONFIG] target:" << QString::fromStdString(m_config.ip)
              << ":" << m_config.port
              << ", type:" << QString::fromStdString(m_config.getTypeString())
              << ", videoPort:" << m_config.videoPort;
+
+    // Устанавливаем таймаут подключения (3 секунды)
+    m_connectionPending = true;
+    m_connectionTimeoutTimer->setInterval(3000);
+    m_connectionTimeoutTimer->start();
 
     // Подключаемся к подвесу
     qDebug() << "MainWindow: [GIMBAL] calling connect()...";
     bool connectResult = m_gimbal->connect(m_config);
     qDebug() << "MainWindow: [GIMBAL] connect() returned:" << (connectResult ? "true" : "false");
-    
+
     if (!connectResult) {
         qCritical() << "MainWindow: [ERROR] gimbal connect() failed";
+        m_connectionPending = false;
+        m_connectionTimeoutTimer->stop();
         return false;
     }
 
-    // Запускаем видеопоток с небольшой задержкой
-    QTimer::singleShot(500, this, [this]() {
-        qDebug() << "MainWindow: [VIDEO] starting video stream...";
-        
-        std::string rtspUrl = gimbal::VideoStream::buildRtspUrl(m_config);
-        qDebug() << "MainWindow: [VIDEO] RTSP URL:" << QString::fromStdString(rtspUrl);
-        
-        bool videoResult = m_videoStream->start(m_config);
-        qDebug() << "MainWindow: [VIDEO] start() returned:" << (videoResult ? "true" : "false");
-        qDebug() << "MainWindow: [VIDEO] isPlaying:" << m_videoStream->isPlaying();
-        
-        if (!videoResult) {
-            qCritical() << "MainWindow: [VIDEO] failed to start video stream";
-        } else {
-            qDebug() << "MainWindow: [VIDEO] video stream started successfully";
-        }
-    });
-
-    m_isConnected = true;
-    qDebug() << "MainWindow: === CONNECTION INITIATED ===";
+    qDebug() << "MainWindow: === CONNECTION INITIATED (waiting for status) ===";
     return true;
 }
 
@@ -293,6 +305,9 @@ void MainWindow::onCloseClicked()
 {
     qDebug() << "=== MainWindow: onCloseClicked ===";
     qDebug() << "  -> Закрытие приложения (closing application)";
+    
+    // Отключаемся от подвеса перед закрытием
+    disconnectFromGimbal();
     close();
 }
 
@@ -311,22 +326,6 @@ void MainWindow::onResizeClicked()
 }
 
 // === Кнопки управления подвесом ===
-
-void MainWindow::onConnectionToggled(bool active)
-{
-    qDebug() << "=== MainWindow: onConnectionToggled ===";
-    qDebug() << "  -> Подключение к подвесу (connection to gimbal):" << (active ? "ON" : "OFF");
-
-    if (active) {
-        if (!connectToGimbal()) {
-            qCritical() << "MainWindow: connection failed";
-            // Сбрасываем состояние кнопки в случае ошибки
-            // Это должно обрабатываться на уровне UI
-        }
-    } else {
-        disconnectFromGimbal();
-    }
-}
 
 void MainWindow::onTelemetryToggled(bool active)
 {
@@ -390,24 +389,44 @@ void MainWindow::onVideoError(const QString& error)
 
 void MainWindow::onConnectionStatusChanged(gimbal::ConnectionStatus status)
 {
-    qDebug() << "MainWindow: connection status changed:" 
+    qDebug() << "MainWindow: connection status changed:"
              << static_cast<int>(status);
-    
+
     switch (status) {
         case gimbal::ConnectionStatus::TcpConnected:
         case gimbal::ConnectionStatus::UdpConnected:
-        case gimbal::ConnectionStatus::SerialPortConnected:
+        case gimbal::ConnectionStatus::SerialPortConnected: {
             m_isConnected = true;
+            m_connectionPending = false;
+            m_connectionTimeoutTimer->stop();
             qDebug() << "MainWindow: gimbal connected";
-            break;
             
+            // Запускаем видеопоток только после успешного подключения
+            qDebug() << "MainWindow: [VIDEO] starting video stream...";
+            std::string rtspUrl = gimbal::VideoStream::buildRtspUrl(m_config);
+            qDebug() << "MainWindow: [VIDEO] RTSP URL:" << QString::fromStdString(rtspUrl);
+            
+            bool videoResult = m_videoStream->start(m_config);
+            qDebug() << "MainWindow: [VIDEO] start() returned:" << (videoResult ? "true" : "false");
+            qDebug() << "MainWindow: [VIDEO] isPlaying:" << m_videoStream->isPlaying();
+            
+            if (!videoResult) {
+                qCritical() << "MainWindow: [VIDEO] failed to start video stream";
+            } else {
+                qDebug() << "MainWindow: [VIDEO] video stream started successfully";
+            }
+            break;
+        }
+
         case gimbal::ConnectionStatus::TcpDisconnected:
         case gimbal::ConnectionStatus::UdpDisconnected:
         case gimbal::ConnectionStatus::SerialPortDisconnected:
             m_isConnected = false;
+            m_connectionPending = false;
+            m_connectionTimeoutTimer->stop();
             qDebug() << "MainWindow: gimbal disconnected";
             break;
-            
+
         default:
             break;
     }

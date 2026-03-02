@@ -4,6 +4,10 @@
 #include <sstream>
 #include <cstring>
 
+#include <QCoreApplication>
+#include <QFileInfo>
+#include <QDir>
+
 namespace gimbal {
 
 ConnectionConfig ConfigManager::getDefaultConfig() {
@@ -18,7 +22,16 @@ ConnectionConfig ConfigManager::getDefaultConfig() {
 }
 
 std::optional<ConnectionConfig> ConfigManager::load(const std::string& path) {
-    std::ifstream file(path);
+    // Если путь абсолютный - используем его
+    std::string configPath = path;
+    
+    // Если путь относительный - ищем конфиг рядом с исполняемым файлом
+    if (path.empty() || path == DEFAULT_CONFIG_PATH) {
+        QString appDir = QCoreApplication::applicationDirPath();
+        configPath = QDir(appDir).filePath(DEFAULT_CONFIG_PATH).toStdString();
+    }
+    
+    std::ifstream file(configPath);
     if (!file.is_open()) {
         // Файл не найден, возвращаем конфигурацию по умолчанию
         return getDefaultConfig();
@@ -33,7 +46,14 @@ std::optional<ConnectionConfig> ConfigManager::load(const std::string& path) {
 }
 
 bool ConfigManager::save(const ConnectionConfig& config, const std::string& path) {
-    std::ofstream file(path);
+    // Если путь относительный - сохраняем рядом с исполняемым файлом
+    std::string configPath = path;
+    if (path.empty() || path == DEFAULT_CONFIG_PATH) {
+        QString appDir = QCoreApplication::applicationDirPath();
+        configPath = QDir(appDir).filePath(DEFAULT_CONFIG_PATH).toStdString();
+    }
+    
+    std::ofstream file(configPath);
     if (!file.is_open()) {
         return false;
     }
