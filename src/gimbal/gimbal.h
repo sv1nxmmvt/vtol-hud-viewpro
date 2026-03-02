@@ -6,23 +6,21 @@
 #include <optional>
 #include <array>
 
+#include "gimbal_config.h"
+
 namespace gimbal {
 
 // ============================================================================
-// Типы подключений
+// Статус подключения
 // ============================================================================
-enum class ConnectionType {
-    Tcp,
-    Udp,
-    SerialPort
-};
-
-struct ConnectionConfig {
-    ConnectionType type = ConnectionType::Tcp;
-    std::string ip;
-    int port = 2000;
-    std::string serialPort;
-    int baudRate = 115200;
+enum class ConnectionStatus {
+    TcpConnected,
+    TcpDisconnected,
+    UdpConnected,
+    UdpDisconnected,
+    SerialPortConnected,
+    SerialPortDisconnected,
+    Unknown
 };
 
 // ============================================================================
@@ -88,6 +86,22 @@ enum class TrackerStatus {
 };
 
 // ============================================================================
+// Статусы AI
+// ============================================================================
+enum class AiStatus {
+    Doing = 0,          // AI активен
+    Stop = 1            // AI остановлен
+};
+
+// ============================================================================
+// Параметры режима трекинга
+// ============================================================================
+struct TrackModeParam {
+    TrackTemplateSize templateSize = TrackTemplateSize::Auto;
+    SensorType sensor = SensorType::Visible1;
+};
+
+// ============================================================================
 // Телеметрия
 // ============================================================================
 struct Telemetry {
@@ -104,6 +118,20 @@ struct Telemetry {
     double zoomMagTimes = 0.0;
     int16_t laserDistance = 0;
     IrColor irColor = IrColor::WhiteHot;
+    RecordMode recordMode = RecordMode::None;
+};
+
+// ============================================================================
+// Карта каналов беспроводного управления
+// ============================================================================
+struct ChannelsMap {
+    char yaw = 0;   // Высокие 4 бита: yaw влево, низкие 4 бита: yaw вправо
+    char pitch = 0; // Высокие 4 бита: pitch вверх, низкие 4 бита: pitch вниз
+    char mode = 0;  // Высокие 4 бита: скорость, низкие 4 бита: центрирование
+    char zoom = 0;  // Высокие 4 бита: зум уменьшение, низкие 4 бита: зум увеличение
+    char focus = 0; // Высокие 4 бита: фокус наружу, низкие 4 бита: фокус внутрь
+    char record = 0;// Высокие 4 бита: фото, низкие 4 бита: запись гимбала
+    char track = 0; // Высокие 4 бита: старт трек, низкие 4 бита: стоп трек
 };
 
 // ============================================================================
@@ -122,6 +150,8 @@ struct DeviceConfig {
     char recordDefinition = 0;              // Определение записи (1: 4K, 2: 1080P)
     char osdGps = 0;                        // OSD GPS (0: UAV, 1: цель)
     char sbusChnlMap = 0;                   // S.BUS/Mavlink каналы (1-4)
+    ChannelsMap chnlsMap{};                 // Карта каналов беспроводного управления
+    char modelCode = 0;                     // Код модели устройства
     std::string versionNo;                  // Версия прошивки
     std::string deviceId;                   // ID устройства
     std::string serialNo;                   // Серийный номер
@@ -168,23 +198,10 @@ enum class OsdInputMask : unsigned char {
 };
 
 // ============================================================================
-// Карта каналов беспроводного управления
-// ============================================================================
-struct ChannelsMap {
-    char yaw = 0;   // Высокие 4 бита: yaw влево, низкие 4 бита: yaw вправо
-    char pitch = 0; // Высокие 4 бита: pitch вверх, низкие 4 бита: pitch вниз
-    char mode = 0;  // Высокие 4 бита: скорость, низкие 4 бита: центрирование
-    char zoom = 0;  // Высокие 4 бита: зум уменьшение, низкие 4 бита: зум увеличение
-    char focus = 0; // Высокие 4 бита: фокус наружу, низкие 4 бита: фокус внутрь
-    char record = 0;// Высокие 4 бита: фото, низкие 4 бита: запись гимбала
-    char track = 0; // Высокие 4 бита: старт трек, низкие 4 бита: стоп трек
-};
-
-// ============================================================================
 // Callback'и (объявления типов)
 // ============================================================================
 using TelemetryCallback = std::function<void(const Telemetry&)>;
-using ConnectionCallback = std::function<void(bool connected)>;
+using ConnectionCallback = std::function<void(ConnectionStatus status)>;
 using DeviceConfigCallback = std::function<void(const DeviceConfig&)>;
 
 // ============================================================================
@@ -200,15 +217,19 @@ public:
     // =========================================================================
     static bool init();
     static void shutdown();
+    static const char* getSdkVersion();
 
     // =========================================================================
     // Подключение и отключение
     // =========================================================================
     bool connect(const ConnectionConfig& config);
     void disconnect();
+    void disconnectTcp();
+    void disconnectSerialPort();
     bool isConnected() const;
     bool isTCPConnected() const;
     bool isSerialPortConnected() const;
+    bool isUDPConnected() const;
 
     // =========================================================================
     // Callback'и
@@ -245,6 +266,11 @@ public:
     FocusMode getFocusMode() const;
     void setFocusMode(FocusMode mode);
 
+    // Цифровой зум
+    void switchEODigitalZoom(bool on);
+    void irDigitalZoomIn();
+    void irDigitalZoomOut();
+
     // =========================================================================
     // Трекинг целей
     // =========================================================================
@@ -253,6 +279,11 @@ public:
     bool isTracking() const;
     void trackTarget(int x, int y, int videoWidth, int videoHeight);
     void setTrackTemplateSize(TrackTemplateSize size);
+
+    // Расширенный трекинг
+    void enableTrackMode(const TrackModeParam& param);
+    void disableTrackMode();
+    void trackTargetPosition(int x, int y, int videoWidth, int videoHeight);
 
     // =========================================================================
     // Запись и фото

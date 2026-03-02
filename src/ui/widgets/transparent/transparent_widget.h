@@ -67,7 +67,8 @@ private:
     bool m_timerExpired = false;
     bool m_mouseMoved = false;
     bool m_dragStarted = false;
-    
+    bool m_pressIgnored = false;
+
     // Кнопки управления окном
     CloseWidget* m_closeButton = nullptr;
     HideWidget* m_hideButton = nullptr;

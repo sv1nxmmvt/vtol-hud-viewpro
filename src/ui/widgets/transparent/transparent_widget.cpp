@@ -153,31 +153,40 @@ bool TransparentWidget::event(QEvent* event)
 
 void TransparentWidget::mousePressEvent(QMouseEvent* event)
 {
+    // Сбрасываем флаг игнорирования перед новой проверкой
+    m_pressIgnored = false;
+
     // Проверяем, находится ли нажатие в области кнопок
     QPoint pos = event->pos();
     
     // Игнорируем нажатия, если они были на кнопках управления окном
     if (m_closeButton && m_closeButton->geometry().contains(pos)) {
+        m_pressIgnored = true;
         return;
     }
     if (m_hideButton && m_hideButton->geometry().contains(pos)) {
+        m_pressIgnored = true;
         return;
     }
     if (m_resizeButton && m_resizeButton->geometry().contains(pos)) {
+        m_pressIgnored = true;
         return;
     }
-    
+
     // Игнорируем нажатия, если они были на кнопках управления подвесом
     if (m_connectionButton && m_connectionButton->geometry().contains(pos)) {
+        m_pressIgnored = true;
         return;
     }
     if (m_telemetryButton && m_telemetryButton->geometry().contains(pos)) {
+        m_pressIgnored = true;
         return;
     }
     if (m_controlButton && m_controlButton->geometry().contains(pos)) {
+        m_pressIgnored = true;
         return;
     }
-    
+
     if (event->button() == Qt::LeftButton) {
         // Сохраняем глобальную позицию мыши
         m_pressPosition = event->globalPosition().toPoint();
@@ -214,35 +223,48 @@ void TransparentWidget::mouseReleaseEvent(QMouseEvent* event)
 {
     // Проверяем, находится ли курсор над кнопками - если да, игнорируем
     QPoint pos = event->pos();
-    
+
     if (m_closeButton && m_closeButton->geometry().contains(pos)) {
+        m_pressIgnored = true;
         event->ignore();
         return;
     }
     if (m_hideButton && m_hideButton->geometry().contains(pos)) {
+        m_pressIgnored = true;
         event->ignore();
         return;
     }
     if (m_resizeButton && m_resizeButton->geometry().contains(pos)) {
+        m_pressIgnored = true;
         event->ignore();
         return;
     }
     if (m_connectionButton && m_connectionButton->geometry().contains(pos)) {
+        m_pressIgnored = true;
         event->ignore();
         return;
     }
     if (m_telemetryButton && m_telemetryButton->geometry().contains(pos)) {
+        m_pressIgnored = true;
         event->ignore();
         return;
     }
     if (m_controlButton && m_controlButton->geometry().contains(pos)) {
+        m_pressIgnored = true;
         event->ignore();
         return;
     }
-    
+
     if (event->button() == Qt::LeftButton) {
+        // Если нажатие было проигнорировано (на кнопке), не отправляем команды
+        if (m_pressIgnored) {
+            m_pressIgnored = false;
+            event->ignore();
+            return;
+        }
+
         m_pressTimer->stop();
-        
+
         qDebug() << "[TransparentWidget] Mouse RELEASE - timerExpired:" << m_timerExpired << "mouseMoved:" << m_mouseMoved;
         
         if (!m_timerExpired) {
@@ -264,7 +286,8 @@ void TransparentWidget::mouseReleaseEvent(QMouseEvent* event)
         m_dragStarted = false;
         m_mouseMoved = false;
         m_timerExpired = false;
-        
+        m_pressIgnored = false;
+
         event->accept();
         return;
     }
@@ -274,28 +297,34 @@ void TransparentWidget::mouseMoveEvent(QMouseEvent* event)
 {
     // Проверяем, находится ли курсор над кнопками - если да, игнорируем движение
     QPoint pos = event->pos();
-    
+
     if (m_closeButton && m_closeButton->geometry().contains(pos)) {
+        m_pressIgnored = true;
         event->ignore();
         return;
     }
     if (m_hideButton && m_hideButton->geometry().contains(pos)) {
+        m_pressIgnored = true;
         event->ignore();
         return;
     }
     if (m_resizeButton && m_resizeButton->geometry().contains(pos)) {
+        m_pressIgnored = true;
         event->ignore();
         return;
     }
     if (m_connectionButton && m_connectionButton->geometry().contains(pos)) {
+        m_pressIgnored = true;
         event->ignore();
         return;
     }
     if (m_telemetryButton && m_telemetryButton->geometry().contains(pos)) {
+        m_pressIgnored = true;
         event->ignore();
         return;
     }
     if (m_controlButton && m_controlButton->geometry().contains(pos)) {
+        m_pressIgnored = true;
         event->ignore();
         return;
     }

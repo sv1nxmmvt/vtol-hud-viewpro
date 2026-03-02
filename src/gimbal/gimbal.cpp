@@ -31,9 +31,26 @@ static std::atomic<bool> g_configValid{false};
 static int connectionCallback(int iConnStatus, const char* szMessage, int iMsgLen, void* pUserParam) {
     std::lock_guard<std::mutex> lock(g_callbackMutex);
     if (g_connectionCallback) {
-        bool connected = (iConnStatus == VLK_CONN_STATUS_TCP_CONNECTED) ||
-                         (iConnStatus == VLK_CONN_STATUS_SERIAL_PORT_CONNECTED);
-        g_connectionCallback(connected);
+        ConnectionStatus status = ConnectionStatus::Unknown;
+        switch (iConnStatus) {
+            case VLK_CONN_STATUS_TCP_CONNECTED:
+                status = ConnectionStatus::TcpConnected;
+                break;
+            case VLK_CONN_STATUS_TCP_DISCONNECTED:
+                status = ConnectionStatus::TcpDisconnected;
+                break;
+            case VLK_CONN_STATUS_SERIAL_PORT_CONNECTED:
+                status = ConnectionStatus::SerialPortConnected;
+                break;
+            case VLK_CONN_STATUS_SERIAL_PORT_DISCONNECTED:
+                status = ConnectionStatus::SerialPortDisconnected;
+                break;
+            default:
+                // Для UDP используем статус по умолчанию
+                status = ConnectionStatus::Unknown;
+                break;
+        }
+        g_connectionCallback(status);
     }
     return 0;
 }
@@ -58,6 +75,7 @@ static int deviceStatusCallback(int iType, const char* szBuffer, int iBufLen, vo
         t.zoomMagTimes = telemetry->dZoomMagTimes;
         t.laserDistance = telemetry->sLaserDistance;
         t.irColor = static_cast<IrColor>(telemetry->emIRColor);
+        t.recordMode = static_cast<RecordMode>(telemetry->emRecordMode);
 
         {
             std::lock_guard<std::mutex> lock2(g_telemetryMutex);
@@ -84,6 +102,14 @@ static int deviceStatusCallback(int iType, const char* szBuffer, int iBufLen, vo
         dc.recordDefinition = config->cRecordDefinition;
         dc.osdGps = config->cOSDGPS;
         dc.sbusChnlMap = config->cSBUSChnlMap;
+        dc.chnlsMap.yaw = config->ChnlsMap.cYW;
+        dc.chnlsMap.pitch = config->ChnlsMap.cPT;
+        dc.chnlsMap.mode = config->ChnlsMap.cMO;
+        dc.chnlsMap.zoom = config->ChnlsMap.cZM;
+        dc.chnlsMap.focus = config->ChnlsMap.cFC;
+        dc.chnlsMap.record = config->ChnlsMap.cRP;
+        dc.chnlsMap.track = config->ChnlsMap.cMU;
+        dc.modelCode = config->cCameraType;
         dc.versionNo = std::string(config->cVersionNO, 20);
         dc.deviceId = std::string(config->cDeviceID, 10);
         dc.serialNo = std::string(config->cSerialNO, 22);
@@ -97,6 +123,12 @@ static int deviceStatusCallback(int iType, const char* szBuffer, int iBufLen, vo
         if (g_deviceConfigCallback) {
             g_deviceConfigCallback(dc);
         }
+    }
+    else if (iType == VLK_DEV_STATUS_TYPE_AISTATE && iBufLen >= sizeof(int)) {
+        auto* aiState = reinterpret_cast<const int*>(szBuffer);
+        AiStatus status = static_cast<AiStatus>(*aiState);
+        // AI статус можно обработать при необходимости
+        (void)status;
     }
 
     return 0;
@@ -156,6 +188,10 @@ void Gimbal::shutdown() {
     VLK_UnInit();
 }
 
+const char* Gimbal::getSdkVersion() {
+    return GetSDKVersion();
+}
+
 // ============================================================================
 // Подключение и отключение
 // ============================================================================
@@ -197,6 +233,14 @@ void Gimbal::disconnect() {
     VLK_Disconnect();
 }
 
+void Gimbal::disconnectTcp() {
+    VLK_DisconnectTCP();
+}
+
+void Gimbal::disconnectSerialPort() {
+    VLK_DisconnectSerialPort();
+}
+
 bool Gimbal::isConnected() const {
     return VLK_IsConnected();
 }
@@ -207,6 +251,11 @@ bool Gimbal::isTCPConnected() const {
 
 bool Gimbal::isSerialPortConnected() const {
     return VLK_IsSerialPortConnected();
+}
+
+bool Gimbal::isUDPConnected() const {
+    // Функция отсутствует в текущей версии SDK
+    return false;
 }
 
 // ============================================================================
@@ -292,6 +341,18 @@ void Gimbal::setFocusMode(FocusMode mode) {
     VLK_SetFocusMode(static_cast<VLK_FOCUS_MODE>(mode));
 }
 
+void Gimbal::switchEODigitalZoom(bool on) {
+    VLK_SwitchEODigitalZoom(on ? 1 : 0);
+}
+
+void Gimbal::irDigitalZoomIn() {
+    VLK_IRDigitalZoomIn(0);
+}
+
+void Gimbal::irDigitalZoomOut() {
+    VLK_IRDigitalZoomOut(0);
+}
+
 // ============================================================================
 // Трекинг целей
 // ============================================================================
@@ -316,6 +377,21 @@ void Gimbal::trackTarget(int x, int y, int videoWidth, int videoHeight) {
 
 void Gimbal::setTrackTemplateSize(TrackTemplateSize size) {
     VLK_SetTrackTemplateSize(static_cast<VLK_TRACK_TEMPLATE_SIZE>(size));
+}
+
+void Gimbal::enableTrackMode(const TrackModeParam& param) {
+    VLK_TRACK_MODE_PARAM vlkParam{};
+    vlkParam.emTrackTempSize = static_cast<VLK_TRACK_TEMPLATE_SIZE>(param.templateSize);
+    vlkParam.emTrackSensor = static_cast<VLK_SENSOR>(param.sensor);
+    VLK_EnableTrackMode(&vlkParam);
+}
+
+void Gimbal::disableTrackMode() {
+    VLK_DisableTrackMode();
+}
+
+void Gimbal::trackTargetPosition(int x, int y, int videoWidth, int videoHeight) {
+    VLK_TrackTargetPosition(x, y, videoWidth, videoHeight);
 }
 
 // ============================================================================
@@ -478,7 +554,7 @@ std::optional<DeviceInfo> Gimbal::getDeviceInfo() const {
     std::lock_guard<std::mutex> lock(g_configMutex);
     if (g_configValid) {
         DeviceInfo info;
-        info.modelCode = g_currentConfig.baudRate;
+        info.modelCode = g_currentConfig.modelCode;
         info.versionNo = g_currentConfig.versionNo;
         info.deviceId = g_currentConfig.deviceId;
         info.serialNo = g_currentConfig.serialNo;
