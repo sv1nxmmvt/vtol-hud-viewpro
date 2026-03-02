@@ -112,32 +112,48 @@ void MainWindow::cleanupGimbalComponents() {
 }
 
 bool MainWindow::connectToGimbal() {
+    qDebug() << "MainWindow: === CONNECTING TO GIMBAL ===";
+    
     if (!m_gimbal) {
-        qCritical() << "MainWindow: gimbal not initialized";
+        qCritical() << "MainWindow: [ERROR] gimbal not initialized";
         return false;
     }
 
-    qDebug() << "MainWindow: connecting to gimbal at" 
-             << QString::fromStdString(m_config.ip) 
-             << ":" << m_config.port;
+    qDebug() << "MainWindow: [CONFIG] target:" << QString::fromStdString(m_config.ip) 
+             << ":" << m_config.port
+             << ", type:" << QString::fromStdString(m_config.getTypeString())
+             << ", videoPort:" << m_config.videoPort;
 
     // Подключаемся к подвесу
-    if (!m_gimbal->connect(m_config)) {
-        qCritical() << "MainWindow: failed to connect to gimbal";
+    qDebug() << "MainWindow: [GIMBAL] calling connect()...";
+    bool connectResult = m_gimbal->connect(m_config);
+    qDebug() << "MainWindow: [GIMBAL] connect() returned:" << (connectResult ? "true" : "false");
+    
+    if (!connectResult) {
+        qCritical() << "MainWindow: [ERROR] gimbal connect() failed";
         return false;
     }
 
-    // Запускаем видеопоток
-    std::string rtspUrl = gimbal::VideoStream::buildRtspUrl(m_config);
-    qDebug() << "MainWindow: starting video stream from" << QString::fromStdString(rtspUrl);
-    
-    if (!m_videoStream->start(m_config)) {
-        qCritical() << "MainWindow: failed to start video stream";
-        return false;
-    }
+    // Запускаем видеопоток с небольшой задержкой
+    QTimer::singleShot(500, this, [this]() {
+        qDebug() << "MainWindow: [VIDEO] starting video stream...";
+        
+        std::string rtspUrl = gimbal::VideoStream::buildRtspUrl(m_config);
+        qDebug() << "MainWindow: [VIDEO] RTSP URL:" << QString::fromStdString(rtspUrl);
+        
+        bool videoResult = m_videoStream->start(m_config);
+        qDebug() << "MainWindow: [VIDEO] start() returned:" << (videoResult ? "true" : "false");
+        qDebug() << "MainWindow: [VIDEO] isPlaying:" << m_videoStream->isPlaying();
+        
+        if (!videoResult) {
+            qCritical() << "MainWindow: [VIDEO] failed to start video stream";
+        } else {
+            qDebug() << "MainWindow: [VIDEO] video stream started successfully";
+        }
+    });
 
     m_isConnected = true;
-    qDebug() << "MainWindow: connected to gimbal and video stream started";
+    qDebug() << "MainWindow: === CONNECTION INITIATED ===";
     return true;
 }
 
@@ -327,14 +343,34 @@ void MainWindow::onControlToggled(bool active)
 
 void MainWindow::onFrameReady(const QImage& frame)
 {
+    if (frame.isNull()) {
+        qWarning() << "MainWindow: [VIDEO] received null frame";
+        return;
+    }
+    
+    static int frameCount = 0;
+    frameCount++;
+    
+    if (frameCount <= 10 || frameCount % 30 == 0) {
+        qDebug() << "MainWindow: [VIDEO] frame #" << frameCount 
+                 << ", size:" << frame.size()
+                 << ", format:" << frame.format()
+                 << ", depth:" << frame.depth();
+    }
+    
     if (auto* videoWidget = qobject_cast<VideoWidget*>(centralWidget())) {
         videoWidget->displayFrame(frame);
+        if (frameCount <= 5) {
+            qDebug() << "MainWindow: [VIDEO] frame displayed on widget";
+        }
+    } else {
+        qWarning() << "MainWindow: [VIDEO] videoWidget is null or not VideoWidget";
     }
 }
 
 void MainWindow::onVideoError(const QString& error)
 {
-    qCritical() << "MainWindow: video stream error:" << error;
+    qCritical() << "MainWindow: [VIDEO ERROR]" << error;
     // TODO: Показать пользователю сообщение об ошибке
 }
 

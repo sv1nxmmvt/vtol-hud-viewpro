@@ -2,6 +2,7 @@
 
 #include <QMainWindow>
 #include <QPoint>
+#include <QTimer>
 #include <memory>
 
 #include "gimbal/gimbal.h"
