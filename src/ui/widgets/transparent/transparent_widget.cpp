@@ -280,6 +280,10 @@ void TransparentWidget::mouseReleaseEvent(QMouseEvent* event)
             qDebug() << "[TransparentWidget] -> END DRAG - emitting endDrag()";
             emit endDrag();
             m_isDragging = false;
+        } else if (m_fullscreen && m_mouseMoved) {
+            // 2.4) Полноэкранный режим - остановка подвеса после движения
+            qDebug() << "[TransparentWidget] -> GIMBAL STOP (fullscreen mode) - emitting gimbalStop()";
+            emit gimbalStop();
         }
         
         // Сбрасываем состояние

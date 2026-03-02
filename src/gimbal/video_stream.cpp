@@ -277,8 +277,9 @@ GstFlowReturn VideoStream::onNewSample(GstAppSink* sink, gpointer userData) {
     }
 
     // Создаём QImage из RGBx данных
-    // RGBx = 4 байта на пиксель, Format_RGB32 подходит
-    QImage frame(mapInfo.data, width, height, stride, QImage::Format_RGB32);
+    // RGBx = 4 байта на пиксель в порядке R-G-B-x
+    // Используем Format_RGBX8888 для правильного отображения цветов
+    QImage frame(mapInfo.data, width, height, stride, QImage::Format_RGBX8888);
     
     // Копируем кадр (т.к. буфер будет освобождён)
     QImage frameCopy = frame.copy();

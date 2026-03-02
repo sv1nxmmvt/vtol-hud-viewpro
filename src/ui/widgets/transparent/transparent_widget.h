@@ -32,6 +32,7 @@ signals:
 
     // Полноэкранный режим
     void gimbalMove(const QPoint& delta);  // Управление гимбалом
+    void gimbalStop();                     // Остановка гимбала
 
     // Сигналы кнопок управления окном
     void closeClicked();

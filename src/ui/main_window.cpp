@@ -38,6 +38,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Полноэкранный режим
     connect(transparentWidget, &TransparentWidget::gimbalMove, this, &MainWindow::onGimbalMove);
+    connect(transparentWidget, &TransparentWidget::gimbalStop, this, &MainWindow::onGimbalStop);
 
     // Кнопки управления окном
     connect(transparentWidget, &TransparentWidget::closeClicked, this, &MainWindow::onCloseClicked);
@@ -264,8 +265,8 @@ void MainWindow::onGimbalMove(const QPoint& delta)
 
     // Преобразуем дельту в скорость (чувствительность можно настроить)
     const int sensitivity = 10;
-    int yawSpeed = -delta.x() * sensitivity;   // Инвертируем для естественного управления
-    int pitchSpeed = delta.y() * sensitivity;
+    int yawSpeed = delta.x() * sensitivity;
+    int pitchSpeed = -delta.y() * sensitivity;   // Инвертируем для естественного управления
 
     // Ограничиваем скорость максимально допустимыми значениями
     const int maxSpeed = 2000;  // VLK_MAX_YAW_SPEED / VLK_MAX_PITCH_SPEED
@@ -273,6 +274,17 @@ void MainWindow::onGimbalMove(const QPoint& delta)
     pitchSpeed = qBound(-maxSpeed, pitchSpeed, maxSpeed);
 
     m_gimbal->move(yawSpeed, pitchSpeed);
+}
+
+void MainWindow::onGimbalStop()
+{
+    if (!m_isConnected || !m_gimbal) {
+        return;
+    }
+
+    qDebug() << "=== MainWindow: onGimbalStop ===";
+    qDebug() << "  -> Остановка ПОДВЕСА (gimbal stop)";
+    m_gimbal->stop();
 }
 
 // === Кнопки управления окном ===
