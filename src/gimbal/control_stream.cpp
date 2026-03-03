@@ -105,8 +105,13 @@ void ControlStream::run() {
     qint64 prevPitch = 0;
     qint64 prevYaw = 0;
     int prevZoom = 0;
+    
+    // Счетчик для периодического логирования
+    int loopCount = 0;
 
     while (m_running) {
+        loopCount++;
+        
         // Читаем текущие значения управляющих сигналов
         qint64 pitch = pitchSpeed;
         qint64 yaw = yawSpeed;
@@ -115,11 +120,13 @@ void ControlStream::run() {
         // Отправляем команды на движение (если изменились)
         if (pitch != prevPitch || yaw != prevYaw) {
             if (pitch == 0 && yaw == 0) {
+                qDebug() << "[ControlStream] loop" << loopCount << ": sending STOP";
                 m_gimbal.stop();
             } else {
                 // Ограничиваем диапазон
                 int16_t pitchClamped = static_cast<int16_t>(qBound(static_cast<qint64>(-2000), pitch, static_cast<qint64>(2000)));
                 int16_t yawClamped = static_cast<int16_t>(qBound(static_cast<qint64>(-2000), yaw, static_cast<qint64>(2000)));
+                qDebug() << "[ControlStream] loop" << loopCount << ": sending MOVE yaw=" << yawClamped << "pitch=" << pitchClamped;
                 m_gimbal.move(yawClamped, pitchClamped);
             }
             prevPitch = pitch;
@@ -129,10 +136,13 @@ void ControlStream::run() {
         // Отправляем команды на зум (если изменились)
         if (zoom != prevZoom) {
             if (zoom == 0) {
+                qDebug() << "[ControlStream] loop" << loopCount << ": sending STOP ZOOM";
                 m_gimbal.stopZoom();
             } else if (zoom > 0) {
+                qDebug() << "[ControlStream] loop" << loopCount << ": sending ZOOM IN speed=" << zoom;
                 m_gimbal.zoomIn(static_cast<uint8_t>(zoom));
             } else {
+                qDebug() << "[ControlStream] loop" << loopCount << ": sending ZOOM OUT speed=" << -zoom;
                 m_gimbal.zoomOut(static_cast<uint8_t>(-zoom));
             }
             prevZoom = zoom;

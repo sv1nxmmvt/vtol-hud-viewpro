@@ -8,6 +8,7 @@
 #include "gimbal/gimbal.h"
 #include "gimbal/video_stream.h"
 #include "gimbal/config_manager.h"
+#include "gimbal/control_stream.h"
 
 class MainWindow : public QMainWindow
 {
@@ -51,6 +52,7 @@ private:
     std::shared_ptr<gimbal::Gimbal> m_gimbal;
     std::unique_ptr<gimbal::VideoStream> m_videoStream;
     std::unique_ptr<gimbal::ConfigManager> m_configManager;
+    gimbal::ControlStream* m_controlStream;  // Не владеющий указатель (singleton)
     gimbal::ConnectionConfig m_config;
 
     bool m_isConnected = false;
@@ -64,4 +66,14 @@ private:
     // Подключение/отключение
     bool connectToGimbal();
     void disconnectFromGimbal();
+
+    // Управление ControlStream
+    void startControlStream();
+    void stopControlStream();
+
+protected:
+    // Обработка клавиатуры для управления подвесом
+    bool event(QEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
+    void keyReleaseEvent(QKeyEvent* event) override;
 };
