@@ -33,6 +33,8 @@ add_executable(viewpro
     src/gimbal/video_stream.cpp
     src/gimbal/config_manager.cpp
     src/gimbal/control_stream.cpp
+    src/gimbal/keyboard_handler.cpp
+    src/gimbal/joystick_handler.cpp
     src/gimbal/viewlink_stub.cpp
 )
 

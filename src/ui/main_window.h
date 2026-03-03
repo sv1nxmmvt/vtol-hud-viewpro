@@ -9,6 +9,8 @@
 #include "gimbal/video_stream.h"
 #include "gimbal/config_manager.h"
 #include "gimbal/control_stream.h"
+#include "gimbal/keyboard_handler.h"
+#include "gimbal/joystick_handler.h"
 
 class MainWindow : public QMainWindow
 {
@@ -52,6 +54,8 @@ private:
     std::shared_ptr<gimbal::Gimbal> m_gimbal;
     std::unique_ptr<gimbal::VideoStream> m_videoStream;
     std::unique_ptr<gimbal::ConfigManager> m_configManager;
+    std::unique_ptr<gimbal::KeyboardHandler> m_keyboardHandler;
+    std::unique_ptr<gimbal::JoystickHandler> m_joystickHandler;
     gimbal::ControlStream* m_controlStream;  // Не владеющий указатель (singleton)
     gimbal::ConnectionConfig m_config;
 

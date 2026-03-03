@@ -5,6 +5,7 @@
 #include "gimbal/gimbal.h"
 #include "gimbal/video_stream.h"
 #include "gimbal/config_manager.h"
+#include "gimbal/keyboard_handler.h"
 
 #include <QVBoxLayout>
 #include <QWidget>
@@ -102,6 +103,18 @@ void MainWindow::initGimbalComponents() {
     m_controlStream = &gimbal::ControlStream::instance(*m_gimbal);
     m_controlStream->setFrequency(10);  // 10 Гц для отзывчивого управления
 
+    // Инициализируем обработчик клавиатуры
+    m_keyboardHandler = std::make_unique<gimbal::KeyboardHandler>(this);
+
+    // Инициализируем обработчик джойстика
+    m_joystickHandler = std::make_unique<gimbal::JoystickHandler>(this);
+    if (gimbal::JoystickHandler::getJoystickCount() > 0) {
+        qDebug() << "MainWindow: joystick detected:" << gimbal::JoystickHandler::getJoystickName(0);
+        m_joystickHandler->init(0);
+    } else {
+        qDebug() << "MainWindow: no joystick detected";
+    }
+
     // Загружаем конфигурацию
     auto configOpt = m_configManager->load();
     if (configOpt) {
@@ -143,6 +156,11 @@ void MainWindow::initGimbalComponents() {
 void MainWindow::cleanupGimbalComponents() {
     // Останавливаем ControlStream
     stopControlStream();
+
+    // Останавливаем джойстик
+    if (m_joystickHandler) {
+        m_joystickHandler->shutdown();
+    }
 
     if (m_connectionTimeoutTimer) {
         m_connectionTimeoutTimer->stop();
@@ -442,105 +460,29 @@ void MainWindow::stopControlStream() {
 
 bool MainWindow::event(QEvent* event) {
     // Перехватываем события клавиатуры даже если фокус на другом виджете
-    if (m_isConnected && m_controlStream) {
+    if (m_isConnected && m_controlStream && m_keyboardHandler) {
         if (event->type() == QEvent::KeyPress) {
-            keyPressEvent(static_cast<QKeyEvent*>(event));
-            return true;  // Событие обработано
+            auto* keyEvent = static_cast<QKeyEvent*>(event);
+            if (m_keyboardHandler->handleKeyPress(keyEvent, m_controlStream)) {
+                return true;  // Событие обработано
+            }
         }
-        if (event->type() == QEvent::KeyRelease) {
-            keyReleaseEvent(static_cast<QKeyEvent*>(event));
-            return true;  // Событие обработано
+        else if (event->type() == QEvent::KeyRelease) {
+            auto* keyEvent = static_cast<QKeyEvent*>(event);
+            if (m_keyboardHandler->handleKeyRelease(keyEvent, m_controlStream)) {
+                return true;  // Событие обработано
+            }
         }
     }
     return QMainWindow::event(event);
 }
 
 void MainWindow::keyPressEvent(QKeyEvent* event) {
-    if (!m_isConnected || !m_controlStream) {
-        QMainWindow::keyPressEvent(event);
-        return;
-    }
-
-    // Управление движением подвеса (клавиши WASD + стрелки)
-    int yaw = 0;
-    int pitch = 0;
-
-    switch (event->key()) {
-        case Qt::Key_W:
-        case Qt::Key_Up:
-            pitch = 2000;  // Вверх
-            break;
-        case Qt::Key_S:
-        case Qt::Key_Down:
-            pitch = -2000;  // Вниз
-            break;
-        case Qt::Key_A:
-        case Qt::Key_Left:
-            yaw = -2000;  // Влево
-            break;
-        case Qt::Key_D:
-        case Qt::Key_Right:
-            yaw = 2000;  // Вправо
-            break;
-
-        // Управление зумом (R/F)
-        case Qt::Key_R:
-            qDebug() << "MainWindow: [KEYBOARD] zoom in";
-            gimbal::ControlStream::zoomSpeed = 4;
-            break;
-        case Qt::Key_F:
-            qDebug() << "MainWindow: [KEYBOARD] zoom out";
-            gimbal::ControlStream::zoomSpeed = -4;
-            break;
-
-        default:
-            QMainWindow::keyPressEvent(event);
-            return;
-    }
-
-    qDebug() << "MainWindow: [KEYBOARD] key pressed:" << event->key()
-             << "-> yaw:" << yaw << ", pitch:" << pitch;
-
-    gimbal::ControlStream::yawSpeed = yaw;
-    gimbal::ControlStream::pitchSpeed = pitch;
+    // Обработка через event() перехватывает клавиши, здесь только для fallback
+    QMainWindow::keyPressEvent(event);
 }
 
 void MainWindow::keyReleaseEvent(QKeyEvent* event) {
-    if (!m_isConnected || !m_controlStream) {
-        QMainWindow::keyReleaseEvent(event);
-        return;
-    }
-
-    // Сбрасываем соответствующую ось при отпускании клавиши
-    switch (event->key()) {
-        case Qt::Key_W:
-        case Qt::Key_S:
-        case Qt::Key_Up:
-        case Qt::Key_Down:
-            qDebug() << "MainWindow: [KEYBOARD] key released:" << event->key()
-                     << "-> resetting pitch";
-            gimbal::ControlStream::pitchSpeed = 0;
-            break;
-
-        case Qt::Key_A:
-        case Qt::Key_D:
-        case Qt::Key_Left:
-        case Qt::Key_Right:
-            qDebug() << "MainWindow: [KEYBOARD] key released:" << event->key()
-                     << "-> resetting yaw";
-            gimbal::ControlStream::yawSpeed = 0;
-            break;
-
-        // Сброс зума
-        case Qt::Key_R:
-        case Qt::Key_F:
-            qDebug() << "MainWindow: [KEYBOARD] key released:" << event->key()
-                     << "-> resetting zoom";
-            gimbal::ControlStream::zoomSpeed = 0;
-            break;
-
-        default:
-            QMainWindow::keyReleaseEvent(event);
-            return;
-    }
+    // Обработка через event() перехватывает клавиши, здесь только для fallback
+    QMainWindow::keyReleaseEvent(event);
 }
