@@ -8,6 +8,8 @@ extern "C" {
 #include <mutex>
 #include <atomic>
 
+#include <QDebug>
+
 namespace gimbal {
 
 // ============================================================================
@@ -287,10 +289,30 @@ void Gimbal::setKeepAliveInterval(int ms) {
 // Управление движением (Pan/Tilt)
 // ============================================================================
 void Gimbal::move(int16_t yawSpeed, int16_t pitchSpeed) {
+    static int moveCount = 0;
+    static int lastLoggedMove = 0;
+    moveCount++;
+    
+    // Логируем каждый 50-й вызов move или при изменении направления
+    if (moveCount - lastLoggedMove >= 50) {
+        qDebug().nospace() << "[GIMBAL] -> VLK_Move(" << yawSpeed << ", " << pitchSpeed << ") call #" << moveCount;
+        lastLoggedMove = moveCount;
+    }
+    
     VLK_Move(yawSpeed, pitchSpeed);
 }
 
 void Gimbal::stop() {
+    static int stopCount = 0;
+    static int lastLoggedStop = 0;
+    stopCount++;
+    
+    // Логируем каждый 10-й вызов stop для отладки
+    if (stopCount - lastLoggedStop >= 10) {
+        qDebug().nospace() << "[GIMBAL] -> VLK_Stop() call #" << stopCount;
+        lastLoggedStop = stopCount;
+    }
+    
     VLK_Stop();
 }
 

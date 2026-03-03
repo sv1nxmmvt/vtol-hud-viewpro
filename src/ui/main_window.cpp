@@ -5,12 +5,12 @@
 #include "gimbal/gimbal.h"
 #include "gimbal/video_stream.h"
 #include "gimbal/config_manager.h"
-#include "gimbal/gimbal_config.h"
 
 #include <QVBoxLayout>
 #include <QWidget>
 #include <Qt>
 #include <QDebug>
+#include <QEvent>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -47,10 +47,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(transparentWidget, &TransparentWidget::startDrag, this, &MainWindow::onStartDrag);
     connect(transparentWidget, &TransparentWidget::endDrag, this, &MainWindow::onEndDrag);
 
-    // Полноэкранный режим
-    connect(transparentWidget, &TransparentWidget::gimbalMove, this, &MainWindow::onGimbalMove);
-    connect(transparentWidget, &TransparentWidget::gimbalStop, this, &MainWindow::onGimbalStop);
-
     // Кнопки управления окном
     connect(transparentWidget, &TransparentWidget::closeClicked, this, &MainWindow::onCloseClicked);
     connect(transparentWidget, &TransparentWidget::hideClicked, this, &MainWindow::onHideClicked);
@@ -70,7 +66,7 @@ MainWindow::MainWindow(QWidget *parent)
     resize(960, 540);
 
     qDebug() << "MainWindow: initialized, window size:" << size();
-    
+
     // Авто-подключение к подвесу при запуске
     QTimer::singleShot(500, this, [this]() {
         qDebug() << "MainWindow: auto-connecting to gimbal...";
@@ -92,7 +88,7 @@ void MainWindow::initGimbalComponents() {
     qDebug() << "MainWindow: Gimbal SDK initialized, version:" << gimbal::Gimbal::getSdkVersion();
 
     // Создаём компоненты
-    m_gimbal = std::make_unique<gimbal::Gimbal>();
+    m_gimbal = std::make_shared<gimbal::Gimbal>();
     m_videoStream = std::make_unique<gimbal::VideoStream>();
     m_configManager = std::make_unique<gimbal::ConfigManager>();
 
@@ -100,7 +96,7 @@ void MainWindow::initGimbalComponents() {
     auto configOpt = m_configManager->load();
     if (configOpt) {
         m_config = *configOpt;
-        qDebug() << "MainWindow: configuration loaded:" 
+        qDebug() << "MainWindow: configuration loaded:"
                  << QString::fromStdString(m_config.getTypeString())
                  << ", IP:" << QString::fromStdString(m_config.ip)
                  << ", port:" << m_config.port
@@ -114,6 +110,16 @@ void MainWindow::initGimbalComponents() {
     m_gimbal->setConnectionCallback([this](gimbal::ConnectionStatus status) {
         QMetaObject::invokeMethod(this, [this, status]() {
             onConnectionStatusChanged(status);
+        }, Qt::QueuedConnection);
+    });
+
+    // Регистрируем callback для телеметрии
+    m_gimbal->setTelemetryCallback([this](const gimbal::Telemetry& t) {
+        QMetaObject::invokeMethod(this, [this, t]() {
+            // Обработка телеметрии
+            qDebug() << "Telemetry: yaw=" << t.yaw
+                     << ", pitch=" << t.pitch
+                     << ", zoom=" << t.zoomMagTimes;
         }, Qt::QueuedConnection);
     });
 
@@ -136,7 +142,7 @@ bool MainWindow::connectToGimbal() {
         qDebug() << "MainWindow: connection already in progress";
         return false;
     }
-    
+
     qDebug() << "MainWindow: === CONNECTING TO GIMBAL ===";
 
     if (!m_gimbal) {
@@ -171,7 +177,7 @@ bool MainWindow::connectToGimbal() {
 }
 
 void MainWindow::disconnectFromGimbal() {
-    if (!m_isConnected) {
+    if (!m_isConnected && !m_connectionPending) {
         return;
     }
 
@@ -184,6 +190,8 @@ void MainWindow::disconnectFromGimbal() {
 
     // Отключаемся от подвеса
     if (m_gimbal) {
+        m_gimbal->stop();
+        m_gimbal->motorOn(false);
         m_gimbal->disconnect();
     }
 
@@ -193,6 +201,7 @@ void MainWindow::disconnectFromGimbal() {
     }
 
     m_isConnected = false;
+    m_connectionPending = false;
     qDebug() << "MainWindow: disconnected from gimbal";
 }
 
@@ -230,7 +239,7 @@ void MainWindow::onTargetAcquire()
     qDebug() << "=== MainWindow: onTargetAcquire ===";
     qDebug() << "  -> Отправка команды на ЗАХВАТ ЦЕЛИ (target acquire command)";
     if (m_isConnected && m_gimbal) {
-        // TODO: Реализовать команду захвата цели
+        // TODO: Здесь будет логика отправки команды на подвес для захвата цели
         // Например: m_gimbal->startTrack();
     }
 }
@@ -240,7 +249,7 @@ void MainWindow::onTargetCancel()
     qDebug() << "=== MainWindow: onTargetCancel ===";
     qDebug() << "  -> Отправка команды на ОТМЕНУ ЗАХВАТА (target cancel command)";
     if (m_isConnected && m_gimbal) {
-        // TODO: Реализовать команду отмены захвата
+        // TODO: Здесь будет логика отмены захвата
         // Например: m_gimbal->stopTrack();
     }
 }
@@ -257,55 +266,13 @@ void MainWindow::onEndDrag()
     qDebug() << "  -> Завершение перетаскивания окна (window drag ended)";
 }
 
-// === Полноэкранный режим ===
-
-void MainWindow::onGimbalMove(const QPoint& delta)
-{
-    if (!m_isConnected || !m_gimbal) {
-        return;
-    }
-
-    // 2.3) Долгое нажатие с движением в fullscreen - управление гимбалом
-    static int moveCount = 0;
-    moveCount++;
-
-    qDebug() << "=== MainWindow: onGimbalMove #" << moveCount << "===";
-    qDebug() << "  -> Управление ПОДВЕСОМ (gimbal control)";
-    qDebug() << "  -> Delta:" << delta;
-    qDebug() << "  -> Yaw (горизонталь):" << delta.x() << "units";
-    qDebug() << "  -> Pitch (вертикаль):" << delta.y() << "units";
-
-    // Преобразуем дельту в скорость (чувствительность можно настроить)
-    const int sensitivity = 10;
-    int yawSpeed = delta.x() * sensitivity;
-    int pitchSpeed = -delta.y() * sensitivity;   // Инвертируем для естественного управления
-
-    // Ограничиваем скорость максимально допустимыми значениями
-    const int maxSpeed = 2000;  // VLK_MAX_YAW_SPEED / VLK_MAX_PITCH_SPEED
-    yawSpeed = qBound(-maxSpeed, yawSpeed, maxSpeed);
-    pitchSpeed = qBound(-maxSpeed, pitchSpeed, maxSpeed);
-
-    m_gimbal->move(yawSpeed, pitchSpeed);
-}
-
-void MainWindow::onGimbalStop()
-{
-    if (!m_isConnected || !m_gimbal) {
-        return;
-    }
-
-    qDebug() << "=== MainWindow: onGimbalStop ===";
-    qDebug() << "  -> Остановка ПОДВЕСА (gimbal stop)";
-    m_gimbal->stop();
-}
-
 // === Кнопки управления окном ===
 
 void MainWindow::onCloseClicked()
 {
     qDebug() << "=== MainWindow: onCloseClicked ===";
     qDebug() << "  -> Закрытие приложения (closing application)";
-    
+
     // Отключаемся от подвеса перед закрытием
     disconnectFromGimbal();
     close();
@@ -331,12 +298,12 @@ void MainWindow::onTelemetryToggled(bool active)
 {
     qDebug() << "=== MainWindow: onTelemetryToggled ===";
     qDebug() << "  -> Телеметрия (telemetry):" << (active ? "ON" : "OFF");
-    
+
     if (active && m_isConnected && m_gimbal) {
         // Включаем получение телеметрии
         m_gimbal->setTelemetryCallback([this](const gimbal::Telemetry& telemetry) {
             // Обработка телеметрии
-            qDebug() << "Telemetry: yaw=" << telemetry.yaw 
+            qDebug() << "Telemetry: yaw=" << telemetry.yaw
                      << ", pitch=" << telemetry.pitch
                      << ", zoom=" << telemetry.zoomMagTimes;
         });
@@ -355,27 +322,11 @@ void MainWindow::onControlToggled(bool active)
 void MainWindow::onFrameReady(const QImage& frame)
 {
     if (frame.isNull()) {
-        qWarning() << "MainWindow: [VIDEO] received null frame";
         return;
     }
-    
-    static int frameCount = 0;
-    frameCount++;
-    
-    if (frameCount <= 10 || frameCount % 30 == 0) {
-        qDebug() << "MainWindow: [VIDEO] frame #" << frameCount 
-                 << ", size:" << frame.size()
-                 << ", format:" << frame.format()
-                 << ", depth:" << frame.depth();
-    }
-    
+
     if (auto* videoWidget = qobject_cast<VideoWidget*>(centralWidget())) {
         videoWidget->displayFrame(frame);
-        if (frameCount <= 5) {
-            qDebug() << "MainWindow: [VIDEO] frame displayed on widget";
-        }
-    } else {
-        qWarning() << "MainWindow: [VIDEO] videoWidget is null or not VideoWidget";
     }
 }
 
@@ -400,16 +351,22 @@ void MainWindow::onConnectionStatusChanged(gimbal::ConnectionStatus status)
             m_connectionPending = false;
             m_connectionTimeoutTimer->stop();
             qDebug() << "MainWindow: gimbal connected";
-            
-            // Запускаем видеопоток только после успешного подключения
+
+            // Включаем моторы
+            if (m_gimbal) {
+                m_gimbal->motorOn(true);
+                qDebug() << "MainWindow: gimbal motors ON";
+            }
+
+            // Запускаем видеопоток
             qDebug() << "MainWindow: [VIDEO] starting video stream...";
             std::string rtspUrl = gimbal::VideoStream::buildRtspUrl(m_config);
             qDebug() << "MainWindow: [VIDEO] RTSP URL:" << QString::fromStdString(rtspUrl);
-            
+
             bool videoResult = m_videoStream->start(m_config);
             qDebug() << "MainWindow: [VIDEO] start() returned:" << (videoResult ? "true" : "false");
             qDebug() << "MainWindow: [VIDEO] isPlaying:" << m_videoStream->isPlaying();
-            
+
             if (!videoResult) {
                 qCritical() << "MainWindow: [VIDEO] failed to start video stream";
             } else {

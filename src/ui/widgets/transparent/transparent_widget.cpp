@@ -266,6 +266,8 @@ void TransparentWidget::mouseReleaseEvent(QMouseEvent* event)
             // 2.4) Полноэкранный режим - остановка подвеса после движения
             qDebug() << "[TransparentWidget] -> GIMBAL STOP (fullscreen mode) - emitting gimbalStop()";
             emit gimbalStop();
+            // Также отправляем нулевой сигнал для потока управления
+            emit gimbalMove(QPoint(0, 0));
         }
         
         // Сбрасываем состояние
@@ -309,7 +311,7 @@ void TransparentWidget::mouseMoveEvent(QMouseEvent* event)
         event->ignore();
         return;
     }
-    
+
     // Проверяем, что левая кнопка всё ещё зажата
     if (!(event->buttons() & Qt::LeftButton)) {
         if (m_dragStarted) {
@@ -318,22 +320,22 @@ void TransparentWidget::mouseMoveEvent(QMouseEvent* event)
         }
         return;
     }
-    
+
     // Если таймер ещё не истёк - ждём
     if (!m_timerExpired) {
         event->accept();
         return;
     }
-    
+
     QPoint currentPos = event->globalPosition().toPoint();
     QPoint delta = currentPos - m_pressPosition;
-    
+
     // Проверяем, что мышь сдвинулась
     if (!m_mouseMoved && (qAbs(delta.x()) > 1 || qAbs(delta.y()) > 1)) {
         m_mouseMoved = true;
         qDebug() << "[TransparentWidget] Mouse MOVED, delta:" << delta;
     }
-    
+
     if (m_mouseMoved) {
         if (!m_fullscreen) {
             // 1.3) Режим окна - перетаскивание через startSystemMove
@@ -342,7 +344,7 @@ void TransparentWidget::mouseMoveEvent(QMouseEvent* event)
                 m_dragStarted = true;
                 qDebug() << "[TransparentWidget] -> START DRAG (window mode) - emitting startDrag(), calling startSystemMove()";
                 emit startDrag();
-                
+
                 // Вызываем startSystemMove - система берёт перетаскивание на себя
                 if (m_topLevelWindow && !m_topLevelWidget->isMaximized()) {
                     m_topLevelWindow->startSystemMove();
@@ -350,9 +352,9 @@ void TransparentWidget::mouseMoveEvent(QMouseEvent* event)
             }
             // После startSystemMove() перемещение обрабатывается системой
         } else {
-            // 2.3) Полноэкранный режим - управление гимбалом
-            qDebug() << "[TransparentWidget] -> GIMBAL MOVE (fullscreen mode) - emitting gimbalMove(" << delta << ")";
-            emit gimbalMove(delta);
+            // 2.3) Полноэкранный режим - управление мышью отключено
+            // Управление подвесом осуществляется только через джойстик
+            // Мышь используется только для захвата/отмены захвата цели
         }
     }
     

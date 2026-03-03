@@ -26,8 +26,6 @@ private slots:
     void onTargetCancel();       // Отмена захвата (долгое нажатие без движения)
     void onStartDrag();          // Начало перетаскивания (режим окна)
     void onEndDrag();            // Конец перетаскивания (режим окна)
-    void onGimbalMove(const QPoint& delta);  // Управление гимбалом (полноэкранный режим)
-    void onGimbalStop();                     // Остановка гимбала (полноэкранный режим)
 
     // Обработка сигналов кнопок управления окном
     void onCloseClicked();
@@ -50,7 +48,7 @@ private:
     QRect m_normalGeometry;
 
     // Компоненты для работы с подвесом
-    std::unique_ptr<gimbal::Gimbal> m_gimbal;
+    std::shared_ptr<gimbal::Gimbal> m_gimbal;
     std::unique_ptr<gimbal::VideoStream> m_videoStream;
     std::unique_ptr<gimbal::ConfigManager> m_configManager;
     gimbal::ConnectionConfig m_config;
