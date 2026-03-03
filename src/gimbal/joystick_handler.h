@@ -23,6 +23,10 @@ class ControlStream;
  * - Кнопка 3: Zoom out
  *
  * Мертвая зона: 10% от полного диапазона оси
+ *
+ * @note Джойстик отправляет команды только когда оси/кнопки активны.
+ *       В покое не обнуляет значения, чтобы не блокировать клавиатуру.
+ * @note Поддерживается горячее подключение/отключение джойстика.
  */
 class JoystickHandler : public QObject {
     Q_OBJECT
@@ -32,21 +36,20 @@ public:
     ~JoystickHandler() override;
 
     /**
-     * @brief Инициализировать джойстик
-     * @param joystickIndex Индекс джойстика (по умолчанию 0)
-     * @return true если успешно
+     * @brief Запустить опрос джойстиков
+     * @details Периодически проверяет подключение джойстиков
      */
-    bool init(int joystickIndex = 0);
+    void start();
 
     /**
-     * @brief Остановить и закрыть джойстик
+     * @brief Остановить опрос джойстиков
      */
-    void shutdown();
+    void stop();
 
     /**
-     * @brief Проверить, инициализирован ли джойстик
+     * @brief Проверить, запущен ли опрос
      */
-    bool isInitialized() const;
+    bool isRunning() const;
 
     /**
      * @brief Получить количество доступных джойстиков
@@ -69,13 +72,33 @@ public:
      */
     float getDeadzone() const;
 
+    /**
+     * @brief Проверить, подключен ли джойстик
+     */
+    bool isJoystickConnected() const;
+
 private slots:
     /**
-     * @brief Периодический опрос джойстика
+     * @brief Периодический опрос джойстиков
      */
-    void pollJoystick();
+    void pollJoysticks();
 
 private:
+    /**
+     * @brief Инициализировать джойстик по индексу
+     */
+    bool openJoystick(int index);
+
+    /**
+     * @brief Закрыть текущий джойстик
+     */
+    void closeJoystick();
+
+    /**
+     * @brief Обработать состояние джойстика
+     */
+    void handleJoystickState();
+
     /**
      * @brief Нормализовать значение оси с учетом мертвой зоны
      * @param value Сырое значение оси (-32768..32767)
@@ -86,10 +109,14 @@ private:
     SDL_Joystick* m_joystick = nullptr;
     QTimer* m_pollTimer = nullptr;
     float m_deadzone = 0.1f;  // 10% мертвая зона
+    bool m_running = false;
 
     // Предыдущее состояние кнопок зума
     bool m_zoomInPressed = false;
     bool m_zoomOutPressed = false;
+
+    // Флаг активности джойстика (оси вне мертвой зоны или кнопки нажаты)
+    bool m_joystickActive = false;
 
     // Индексы осей и кнопок
     static constexpr int PITCH_AXIS = 4;

@@ -11,6 +11,7 @@
 #include "gimbal/control_stream.h"
 #include "gimbal/keyboard_handler.h"
 #include "gimbal/joystick_handler.h"
+#include "gimbal/command_handler.h"
 
 class MainWindow : public QMainWindow
 {

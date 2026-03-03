@@ -106,14 +106,12 @@ void MainWindow::initGimbalComponents() {
     // Инициализируем обработчик клавиатуры
     m_keyboardHandler = std::make_unique<gimbal::KeyboardHandler>(this);
 
-    // Инициализируем обработчик джойстика
+    // Инициализируем обработчик джойстика и запускаем опрос
     m_joystickHandler = std::make_unique<gimbal::JoystickHandler>(this);
-    if (gimbal::JoystickHandler::getJoystickCount() > 0) {
-        qDebug() << "MainWindow: joystick detected:" << gimbal::JoystickHandler::getJoystickName(0);
-        m_joystickHandler->init(0);
-    } else {
-        qDebug() << "MainWindow: no joystick detected";
-    }
+    m_joystickHandler->start();
+
+    // Инициализируем CommandHandler для отправки команд
+    gimbal::CommandHandler::init(m_gimbal);
 
     // Загружаем конфигурацию
     auto configOpt = m_configManager->load();
@@ -157,9 +155,9 @@ void MainWindow::cleanupGimbalComponents() {
     // Останавливаем ControlStream
     stopControlStream();
 
-    // Останавливаем джойстик
+    // Останавливаем опрос джойстика
     if (m_joystickHandler) {
-        m_joystickHandler->shutdown();
+        m_joystickHandler->stop();
     }
 
     if (m_connectionTimeoutTimer) {

@@ -22,6 +22,17 @@ class ControlStream;
  * - Зум: R/F
  *   - R: zoom in (скорость 4)
  *   - F: zoom out (скорость -4)
+ *
+ * - Команды (через CommandHandler):
+ *   - V: обычная камера
+ *   - T: тепловизор
+ *   - P: включить PIP
+ *   - O: выключить PIP
+ *   - I: IR zoom in
+ *   - K: IR zoom out
+ *   - Space: laser single
+ *   - L: включить/выключить дальномер
+ *   - G: включить/выключить режим следования
  */
 class KeyboardHandler : public QObject {
     Q_OBJECT
@@ -57,6 +68,10 @@ private:
     // Скорости управления
     static constexpr int MOVE_SPEED = 2000;     // Скорость движения осей
     static constexpr int ZOOM_SPEED = 4;        // Скорость зума
+
+    // Состояние переключателей
+    bool m_laserRangeFinderEnabled = false;
+    bool m_followModeEnabled = false;
 };
 
 } // namespace gimbal
