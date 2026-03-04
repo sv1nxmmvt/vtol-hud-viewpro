@@ -1,6 +1,8 @@
 #include "command_handler.h"
+#include "control_stream.h"
 
 #include <QDebug>
+#include <QTimer>
 
 namespace gimbal {
 
@@ -221,7 +223,7 @@ void CommandHandler::enableFollowMode(bool enable) {
     }
     qDebug() << "[CommandHandler] Follow mode:" << (enable ? "ON" : "OFF");
     gimbal->enableFollowMode(enable);
-    
+
     // Проверяем статус после включения
     if (enable) {
         bool status = gimbal->isFollowMode();
@@ -230,6 +232,156 @@ void CommandHandler::enableFollowMode(bool enable) {
             qWarning() << "[CommandHandler] Follow mode may require GPS data from drone";
         }
     }
+}
+
+// ============================================================================
+// OSD (On-Screen Display)
+// ============================================================================
+
+void CommandHandler::enableOSD() {
+    auto gimbal = s_gimbal.lock();
+    if (!gimbal) {
+        qWarning() << "[CommandHandler] Gimbal not initialized";
+        return;
+    }
+    qDebug() << "[CommandHandler] Enable OSD";
+    gimbal::OSDParam param{};
+    param.osd = static_cast<char>(gimbal::OsdMask::EnableOsd);
+    param.osdInput = 0;
+    gimbal->setOSD(param);
+}
+
+void CommandHandler::disableOSD() {
+    auto gimbal = s_gimbal.lock();
+    if (!gimbal) {
+        qWarning() << "[CommandHandler] Gimbal not initialized";
+        return;
+    }
+    qDebug() << "[CommandHandler] Disable OSD";
+    gimbal::OSDParam param{};
+    param.osd = 0;
+    param.osdInput = 0;
+    gimbal->setOSD(param);
+}
+
+void CommandHandler::setOSDCross(bool enable) {
+    auto gimbal = s_gimbal.lock();
+    if (!gimbal) {
+        qWarning() << "[CommandHandler] Gimbal not initialized";
+        return;
+    }
+    qDebug() << "[CommandHandler] OSD Cross:" << (enable ? "ON" : "OFF");
+    // Для переключения отдельных элементов нужно сначала получить текущие настройки
+    // Здесь упрощенная реализация - включаем OSD с перекрестием
+    gimbal::OSDParam param{};
+    param.osd = static_cast<char>(gimbal::OsdMask::EnableOsd);
+    if (enable) {
+        param.osd |= static_cast<char>(gimbal::OsdMask::Cross);
+    }
+    param.osdInput = 0;
+    gimbal->setOSD(param);
+}
+
+void CommandHandler::setOSDPitchYaw(bool enable) {
+    auto gimbal = s_gimbal.lock();
+    if (!gimbal) {
+        qWarning() << "[CommandHandler] Gimbal not initialized";
+        return;
+    }
+    qDebug() << "[CommandHandler] OSD Pitch/Yaw:" << (enable ? "ON" : "OFF");
+    gimbal::OSDParam param{};
+    param.osd = static_cast<char>(gimbal::OsdMask::EnableOsd);
+    if (enable) {
+        param.osd |= static_cast<char>(gimbal::OsdMask::PitchYaw);
+    }
+    param.osdInput = 0;
+    gimbal->setOSD(param);
+}
+
+void CommandHandler::setOSDGPS(bool enable) {
+    auto gimbal = s_gimbal.lock();
+    if (!gimbal) {
+        qWarning() << "[CommandHandler] Gimbal not initialized";
+        return;
+    }
+    qDebug() << "[CommandHandler] OSD GPS:" << (enable ? "ON" : "OFF");
+    gimbal::OSDParam param{};
+    param.osd = static_cast<char>(gimbal::OsdMask::EnableOsd);
+    if (enable) {
+        param.osd |= static_cast<char>(gimbal::OsdMask::Gps);
+    }
+    param.osdInput = 0;
+    gimbal->setOSD(param);
+}
+
+void CommandHandler::setOSDTime(bool enable) {
+    auto gimbal = s_gimbal.lock();
+    if (!gimbal) {
+        qWarning() << "[CommandHandler] Gimbal not initialized";
+        return;
+    }
+    qDebug() << "[CommandHandler] OSD Time:" << (enable ? "ON" : "OFF");
+    gimbal::OSDParam param{};
+    param.osd = static_cast<char>(gimbal::OsdMask::EnableOsd);
+    if (enable) {
+        param.osd |= static_cast<char>(gimbal::OsdMask::Time);
+    }
+    param.osdInput = 0;
+    gimbal->setOSD(param);
+}
+
+void CommandHandler::setOSDVLmag(bool enable) {
+    auto gimbal = s_gimbal.lock();
+    if (!gimbal) {
+        qWarning() << "[CommandHandler] Gimbal not initialized";
+        return;
+    }
+    qDebug() << "[CommandHandler] OSD VL-MAG:" << (enable ? "ON" : "OFF");
+    gimbal::OSDParam param{};
+    param.osd = static_cast<char>(gimbal::OsdMask::EnableOsd);
+    if (enable) {
+        param.osd |= static_cast<char>(gimbal::OsdMask::VlMag);
+    }
+    param.osdInput = 0;
+    gimbal->setOSD(param);
+}
+
+// ============================================================================
+// Позиции подвеса
+// ============================================================================
+
+void CommandHandler::goToHome() {
+    auto gimbal = s_gimbal.lock();
+    if (!gimbal) {
+        qWarning() << "[CommandHandler] Gimbal not initialized";
+        return;
+    }
+    qDebug() << "[CommandHandler] Go to home (nadir) position";
+    // Блокируем ControlStream на 1.5 секунды, чтобы он не перебивал turnTo()
+    ControlStream::setMoveBlocked(true);
+    // Надир: камера смотрит вниз (pitch = -90°), yaw = 0°
+    gimbal->turnTo(0.0, -90.0);
+    // Разблокируем через 1.5 секунды (время на поворот подвеса)
+    QTimer::singleShot(1500, []() {
+        ControlStream::setMoveBlocked(false);
+    });
+}
+
+void CommandHandler::goToFront() {
+    auto gimbal = s_gimbal.lock();
+    if (!gimbal) {
+        qWarning() << "[CommandHandler] Gimbal not initialized";
+        return;
+    }
+    qDebug() << "[CommandHandler] Go to front position (0, 0)";
+    // Блокируем ControlStream на 1.5 секунды, чтобы он не перебивал turnTo()
+    ControlStream::setMoveBlocked(true);
+    // Фронт: камера смотрит вперед по горизонту (pitch = 0°), yaw = 0°
+    gimbal->turnTo(0.0, 0.0);
+    // Разблокируем через 1.5 секунды (время на поворот подвеса)
+    QTimer::singleShot(1500, []() {
+        ControlStream::setMoveBlocked(false);
+    });
 }
 
 } // namespace gimbal

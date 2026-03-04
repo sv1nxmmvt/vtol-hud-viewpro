@@ -125,6 +125,10 @@ private:
     bool m_zoomInPressed = false;
     bool m_zoomOutPressed = false;
 
+    // Предыдущее состояние кнопок позиции
+    bool m_nadirButtonPressed = false;    // Кнопка 23 (SDL) / 24 (виртуальный)
+    bool m_frontButtonPressed = false;    // Кнопка 33 (SDL) / 34 (виртуальный)
+
     // Флаг активности джойстика (оси вне мертвой зоны или кнопки нажаты)
     bool m_joystickActive = false;
 
@@ -144,6 +148,8 @@ private:
     static constexpr int VIDEO_AXIS = 7;  // Ось для управления источником видео и PIP
     static constexpr int ZOOM_IN_BUTTON = 1;
     static constexpr int ZOOM_OUT_BUTTON = 3;
+    static constexpr int NADIR_BUTTON = 23;   // Кнопка 24: позиция надир (home)
+    static constexpr int FRONT_BUTTON = 33;   // Кнопка 34: позиция фронт (0, 0)
 
     // Скорости управления
     static constexpr int MOVE_SPEED = 2000;

@@ -4,6 +4,7 @@
 
 #include <QDebug>
 #include <cmath>
+#include <vector>
 
 namespace gimbal {
 
@@ -221,13 +222,6 @@ void JoystickHandler::handleJoystickState() {
     Sint16 pitchAxisValue = SDL_JoystickGetAxis(m_joystick, PITCH_AXIS);
     Sint16 yawAxisValue = SDL_JoystickGetAxis(m_joystick, YAW_AXIS);
 
-    // Отладочное логирование каждые 100 вызовов
-    static int debugCounter = 0;
-    if (++debugCounter % 100 == 0) {
-        qDebug() << "[JoystickHandler] Debug - Axis values:" << pitchAxisValue << yawAxisValue
-                 << ", normalized:" << normalizeAxis(pitchAxisValue) << normalizeAxis(yawAxisValue);
-    }
-
     // Нормализуем с учетом мертвой зоны
     float pitchNormalized = normalizeAxis(pitchAxisValue);
     float yawNormalized = normalizeAxis(yawAxisValue);
@@ -238,6 +232,17 @@ void JoystickHandler::handleJoystickState() {
 
     // Проверяем кнопки зума
     int buttonCount = SDL_JoystickNumButtons(m_joystick);
+    
+    // Отладка: логируем все кнопки 1-40 если они изменились
+    static std::vector<bool> previousButtons(40, false);
+    for (int i = 1; i < 40 && i < buttonCount; i++) {
+        bool current = SDL_JoystickGetButton(m_joystick, i);
+        if (current != previousButtons[i]) {
+            qDebug() << "[JoystickHandler] Button" << i << "(SDL)" << (i+1) << "(virt):" << (current ? "PRESSED" : "RELEASED");
+            previousButtons[i] = current;
+        }
+    }
+    
     bool zoomInNow = (buttonCount > ZOOM_IN_BUTTON) && SDL_JoystickGetButton(m_joystick, ZOOM_IN_BUTTON);
     bool zoomOutNow = (buttonCount > ZOOM_OUT_BUTTON) && SDL_JoystickGetButton(m_joystick, ZOOM_OUT_BUTTON);
     bool buttonsActive = zoomInNow || zoomOutNow;
@@ -248,6 +253,30 @@ void JoystickHandler::handleJoystickState() {
 
     // Обработка оси видео (независимо от активности джойстика)
     handleVideoAxis();
+
+    // ========================================================================
+    // Обработка кнопок позиции (23, 33 в SDL) - ДО возврата, чтобы работали в покое
+    // ========================================================================
+
+    // Кнопка 23 (SDL): позиция надир (home)
+    bool nadirButtonNow = (buttonCount > NADIR_BUTTON) &&
+                          SDL_JoystickGetButton(m_joystick, NADIR_BUTTON);
+
+    // Кнопка 33 (SDL): позиция фронт (0, 0)
+    bool frontButtonNow = (buttonCount > FRONT_BUTTON) &&
+                          SDL_JoystickGetButton(m_joystick, FRONT_BUTTON);
+
+    if (nadirButtonNow && !m_nadirButtonPressed) {
+        qDebug() << "[JoystickHandler] Nadir (home) button PRESSED (SDL button 23)";
+        CommandHandler::goToHome();
+    }
+    m_nadirButtonPressed = nadirButtonNow;
+
+    if (frontButtonNow && !m_frontButtonPressed) {
+        qDebug() << "[JoystickHandler] Front button PRESSED (SDL button 33)";
+        CommandHandler::goToFront();
+    }
+    m_frontButtonPressed = frontButtonNow;
 
     // Логируем изменение состояния активности
     if (m_joystickActive && !wasActive) {

@@ -121,10 +121,6 @@ void MainWindow::initGimbalComponents() {
     connect(m_telemetryStream.get(), &gimbal::TelemetryStream::telemetryUpdated,
             this, &MainWindow::onTelemetryUpdated);
 
-    // Подключаемся к сигналу дальномера
-    connect(m_telemetryStream.get(), &gimbal::TelemetryStream::laserDistanceUpdated,
-            this, &MainWindow::onLaserDistanceUpdated);
-
     // Загружаем конфигурацию
     auto configOpt = m_configManager->load();
     if (configOpt) {
@@ -516,14 +512,5 @@ void MainWindow::onTelemetryUpdated(const gimbal::Telemetry& telemetry) {
                  << "yaw=" << telemetry.yaw
                  << ", pitch=" << telemetry.pitch
                  << ", zoom=" << telemetry.zoomMagTimes;
-    }
-}
-
-void MainWindow::onLaserDistanceUpdated(double distance, bool hasData) {
-    // Обновляем виджет дальномера
-    if (auto* videoWidget = qobject_cast<VideoWidget*>(centralWidget())) {
-        if (auto* transparentWidget = videoWidget->transparentWidget()) {
-            transparentWidget->setLaserDistance(distance);
-        }
     }
 }

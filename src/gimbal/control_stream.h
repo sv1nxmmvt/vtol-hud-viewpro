@@ -91,6 +91,18 @@ public:
      */
     static void reset();
 
+    /**
+     * @brief Временно заблокировать отправку команд move()
+     * @param blocked true = заблокировать, false = разблокировать
+     * @details Используется для выполнения turnTo() без помех от ControlStream
+     */
+    static void setMoveBlocked(bool blocked);
+
+    /**
+     * @brief Проверить, заблокированы ли команды move()
+     */
+    static bool isMoveBlocked();
+
     ~ControlStream() override;
 
     // Запрет копирования
@@ -109,6 +121,9 @@ private:
 
     // Статический экземпляр (указатель, т.к. нужен Gimbal для инициализации)
     static ControlStream* s_instance;
+
+    // Флаг блокировки команд move()
+    static QAtomicInteger<int> m_moveBlocked;
 };
 
 } // namespace gimbal

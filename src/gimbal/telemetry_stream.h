@@ -45,18 +45,6 @@ public:
     Telemetry getTelemetry() const;
 
     /**
-     * @brief Получить текущее расстояние от лазера
-     * @return Расстояние в метрах (0 если нет данных)
-     */
-    double getLaserDistance() const;
-
-    /**
-     * @brief Проверить, есть ли данные от дальномера
-     * @return true если расстояние > 0
-     */
-    bool hasLaserData() const;
-
-    /**
      * @brief Получить текущие углы подвеса
      * @param yaw Указатель на переменную для yaw (может быть nullptr)
      * @param pitch Указатель на переменную для pitch (может быть nullptr)
@@ -103,13 +91,6 @@ signals:
      */
     void telemetryUpdated(const Telemetry& telemetry);
 
-    /**
-     * @brief Сигнал обновления данных дальномера
-     * @param distance Расстояние в метрах
-     * @param hasData true если есть валидные данные
-     */
-    void laserDistanceUpdated(double distance, bool hasData);
-
 private slots:
     /**
      * @brief Обработка телеметрии от подвеса
@@ -121,8 +102,6 @@ private:
     std::weak_ptr<Gimbal> m_gimbal;
     Telemetry m_currentTelemetry;
     mutable QMutex m_mutex;
-    double m_laserDistance = 0.0;
-    bool m_hasLaserData = false;
     bool m_initialized = false;
 
     static TelemetryStream* s_instance;

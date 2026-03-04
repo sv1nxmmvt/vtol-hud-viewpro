@@ -15,6 +15,7 @@ QAtomicInteger<qint64> ControlStream::pitchSpeed{0};
 QAtomicInteger<qint64> ControlStream::yawSpeed{0};
 QAtomicInteger<int> ControlStream::zoomSpeed{0};
 ControlStream* ControlStream::s_instance = nullptr;
+QAtomicInteger<int> ControlStream::m_moveBlocked;
 
 // ============================================================================
 // Конструктор / Деструктор
@@ -90,6 +91,14 @@ void ControlStream::reset() {
     zoomSpeed = 0;
 }
 
+void ControlStream::setMoveBlocked(bool blocked) {
+    m_moveBlocked = blocked ? 1 : 0;
+}
+
+bool ControlStream::isMoveBlocked() {
+    return m_moveBlocked != 0;
+}
+
 // ============================================================================
 // Поток отправки команд
 // ============================================================================
@@ -111,14 +120,14 @@ void ControlStream::run() {
 
     while (m_running) {
         loopCount++;
-        
+
         // Читаем текущие значения управляющих сигналов
         qint64 pitch = pitchSpeed;
         qint64 yaw = yawSpeed;
         int zoom = zoomSpeed;
 
-        // Отправляем команды на движение (если изменились)
-        if (pitch != prevPitch || yaw != prevYaw) {
+        // Отправляем команды на движение (если изменились и не заблокированы)
+        if (!isMoveBlocked() && (pitch != prevPitch || yaw != prevYaw)) {
             if (pitch == 0 && yaw == 0) {
                 qDebug() << "[ControlStream] loop" << loopCount << ": sending STOP";
                 m_gimbal.stop();

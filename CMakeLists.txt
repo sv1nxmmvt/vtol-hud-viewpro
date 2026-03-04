@@ -23,7 +23,6 @@ add_executable(viewpro
     src/ui/main_window.cpp
     src/ui/widgets/video/video_widget.cpp
     src/ui/widgets/transparent/transparent_widget.cpp
-    src/ui/widgets/lrf/laser_range_widget.cpp
     src/ui/widgets/titles/close_widget.cpp
     src/ui/widgets/titles/hide_widget.cpp
     src/ui/widgets/titles/resize_widget.cpp

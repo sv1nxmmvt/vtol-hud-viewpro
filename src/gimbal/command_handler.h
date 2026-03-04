@@ -163,6 +163,64 @@ public:
      */
     static void enableFollowMode(bool enable);
 
+    // =========================================================================
+    // OSD (On-Screen Display)
+    // =========================================================================
+
+    /**
+     * @brief Включить OSD
+     */
+    static void enableOSD();
+
+    /**
+     * @brief Выключить OSD
+     */
+    static void disableOSD();
+
+    /**
+     * @brief Переключить отображение перекрестия
+     * @param enable true = включить, false = выключить
+     */
+    static void setOSDCross(bool enable);
+
+    /**
+     * @brief Переключить отображение pitch/yaw
+     * @param enable true = включить, false = выключить
+     */
+    static void setOSDPitchYaw(bool enable);
+
+    /**
+     * @brief Переключить отображение GPS
+     * @param enable true = включить, false = выключить
+     */
+    static void setOSDGPS(bool enable);
+
+    /**
+     * @brief Переключить отображение времени
+     * @param enable true = включить, false = выключить
+     */
+    static void setOSDTime(bool enable);
+
+    /**
+     * @brief Переключить отображение кратности зума (VL-MAG)
+     * @param enable true = включить, false = выключить
+     */
+    static void setOSDVLmag(bool enable);
+
+    // =========================================================================
+    // Позиции подвеса
+    // =========================================================================
+
+    /**
+     * @brief Перейти в позицию надир (home)
+     */
+    static void goToHome();
+
+    /**
+     * @brief Перейти в позицию фронт (0, 0)
+     */
+    static void goToFront();
+
 private:
     static std::weak_ptr<Gimbal> s_gimbal;
     static CommandHandler* s_instance;

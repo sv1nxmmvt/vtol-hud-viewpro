@@ -50,7 +50,6 @@ private slots:
 
     // Обработка телеметрии
     void onTelemetryUpdated(const gimbal::Telemetry& telemetry);
-    void onLaserDistanceUpdated(double distance, bool hasData);
 
 private:
     bool m_fullscreen = false;
