@@ -1,5 +1,6 @@
 #include "joystick_handler.h"
 #include "control_stream.h"
+#include "command_handler.h"
 
 #include <QDebug>
 #include <cmath>
@@ -60,6 +61,12 @@ bool JoystickHandler::isJoystickConnected() const {
     return m_joystick != nullptr;
 }
 
+void JoystickHandler::applyCurrentVideoState() {
+    // Сбрасываем последнее состояние, чтобы применить текущую позицию оси
+    m_lastVideoState = VideoState::Neutral;
+    handleVideoAxis();
+}
+
 int JoystickHandler::getJoystickCount() {
     return SDL_NumJoysticks();
 }
@@ -114,6 +121,9 @@ bool JoystickHandler::openJoystick(int index) {
     qDebug() << "[JoystickHandler] Axes:" << SDL_JoystickNumAxes(m_joystick)
              << ", Buttons:" << SDL_JoystickNumButtons(m_joystick)
              << ", Attached:" << SDL_JoystickGetAttached(m_joystick);
+
+    // Инициализируем состояние оси видео
+    handleVideoAxis();
 
     return true;
 }
@@ -236,6 +246,9 @@ void JoystickHandler::handleJoystickState() {
     bool wasActive = m_joystickActive;
     m_joystickActive = pitchActive || yawActive || buttonsActive;
 
+    // Обработка оси видео (независимо от активности джойстика)
+    handleVideoAxis();
+
     // Логируем изменение состояния активности
     if (m_joystickActive && !wasActive) {
         qDebug() << "[JoystickHandler] Joystick became ACTIVE";
@@ -257,7 +270,7 @@ void JoystickHandler::handleJoystickState() {
     // Преобразуем в скорости управления
     // Ось 4 (pitch): вверх = отрицательное значение, вниз = положительное
     // В gimbal: pitch > 0 = вверх, pitch < 0 = вниз
-    int pitchSpeed = static_cast<int>(-pitchNormalized * MOVE_SPEED);
+    int pitchSpeed = static_cast<int>(pitchNormalized * MOVE_SPEED);
 
     // Ось 5 (yaw): влево = отрицательное, вправо = положительное
     // В gimbal: yaw > 0 = вправо, yaw < 0 = влево
@@ -277,13 +290,23 @@ void JoystickHandler::handleJoystickState() {
     }
 
     // Обработка кнопок зума
+    // Определяем текущий источник видео
+    ImageType currentImageType = CommandHandler::getCurrentImageType();
+    bool isThermal = (currentImageType == ImageType::Ir1);
+
     // Zoom in (кнопка 1)
     if (zoomInNow && !m_zoomInPressed) {
-        qDebug() << "[JoystickHandler] Zoom IN button pressed";
-        ControlStream::zoomSpeed = ZOOM_SPEED;
+        qDebug() << "[JoystickHandler] Zoom IN button pressed (thermal=" << isThermal << ")";
+        if (isThermal) {
+            // Для тепловизора - цифровой зум
+            CommandHandler::irDigitalZoomIn();
+        } else {
+            // Для обычной камеры - оптический зум
+            ControlStream::zoomSpeed = ZOOM_SPEED;
+        }
     } else if (!zoomInNow && m_zoomInPressed) {
         qDebug() << "[JoystickHandler] Zoom IN button released";
-        if (!zoomOutNow) {
+        if (!isThermal && !zoomOutNow) {
             ControlStream::zoomSpeed = 0;
         }
     }
@@ -291,19 +314,98 @@ void JoystickHandler::handleJoystickState() {
 
     // Zoom out (кнопка 3)
     if (zoomOutNow && !m_zoomOutPressed) {
-        qDebug() << "[JoystickHandler] Zoom OUT button pressed";
-        ControlStream::zoomSpeed = -ZOOM_SPEED;
+        qDebug() << "[JoystickHandler] Zoom OUT button pressed (thermal=" << isThermal << ")";
+        if (isThermal) {
+            // Для тепловизора - цифровой зум
+            CommandHandler::irDigitalZoomOut();
+        } else {
+            // Для обычной камеры - оптический зум
+            ControlStream::zoomSpeed = -ZOOM_SPEED;
+        }
     } else if (!zoomOutNow && m_zoomOutPressed) {
         qDebug() << "[JoystickHandler] Zoom OUT button released";
-        if (!zoomInNow) {
+        if (!isThermal && !zoomInNow) {
             ControlStream::zoomSpeed = 0;
         }
     }
     m_zoomOutPressed = zoomOutNow;
 
-    // Приоритет zoom in над zoom out если обе нажаты
-    if (zoomInNow && zoomOutNow) {
+    // Приоритет zoom in над zoom out если обе нажаты (только для обычной камеры)
+    if (zoomInNow && zoomOutNow && !isThermal) {
         ControlStream::zoomSpeed = ZOOM_SPEED;
+    }
+}
+
+void JoystickHandler::handleVideoAxis() {
+    if (!m_joystick) {
+        return;
+    }
+
+    int axisCount = SDL_JoystickNumAxes(m_joystick);
+    if (axisCount <= VIDEO_AXIS) {
+        return;
+    }
+
+    Sint16 videoAxisValue = SDL_JoystickGetAxis(m_joystick, VIDEO_AXIS);
+    float videoNormalized = static_cast<float>(videoAxisValue) / 32767.0f;
+
+    // Определяем текущую позицию на основе диапазонов:
+    // < -0.75        => обычная камера, PIP выключен
+    // -0.75 .. -0.25 => тепловизор, PIP выключен
+    // -0.25 .. +0.25 => нейтральная зона, без изменений
+    // +0.25 .. +0.75 => обычная камера, PIP включен
+    // > +0.75        => тепловизор, PIP включен
+
+    VideoState currentState;
+    if (videoNormalized < -0.75f) {
+        currentState = VideoState::VisiblePipOff;
+    } else if (videoNormalized < -0.25f) {
+        currentState = VideoState::ThermalPipOff;
+    } else if (videoNormalized < 0.25f) {
+        currentState = VideoState::Neutral;
+    } else if (videoNormalized < 0.75f) {
+        currentState = VideoState::VisiblePipOn;
+    } else {
+        currentState = VideoState::ThermalPipOn;
+    }
+
+    // Если состояние не изменилось, ничего не делаем
+    if (currentState == m_lastVideoState) {
+        return;
+    }
+
+    // Игнорируем нейтральную зону (но запоминаем состояние)
+    if (currentState == VideoState::Neutral) {
+        m_lastVideoState = VideoState::Neutral;
+        return;
+    }
+
+    m_lastVideoState = currentState;
+
+    // Обрабатываем переключение
+    switch (currentState) {
+        case VideoState::VisiblePipOff:
+            qDebug() << "[JoystickHandler] Video axis: VISIBLE, PIP OFF";
+            gimbal::CommandHandler::disablePip();
+            gimbal::CommandHandler::setVideoSourceVisible();
+            break;
+        case VideoState::ThermalPipOff:
+            qDebug() << "[JoystickHandler] Video axis: THERMAL, PIP OFF";
+            gimbal::CommandHandler::disablePip();
+            gimbal::CommandHandler::setVideoSourceThermal();
+            break;
+        case VideoState::VisiblePipOn:
+            qDebug() << "[JoystickHandler] Video axis: VISIBLE, PIP ON";
+            gimbal::CommandHandler::enablePip();
+            gimbal::CommandHandler::setVideoSourceVisible();
+            break;
+        case VideoState::ThermalPipOn:
+            qDebug() << "[JoystickHandler] Video axis: THERMAL, PIP ON";
+            gimbal::CommandHandler::enablePip();
+            gimbal::CommandHandler::setVideoSourceThermal();
+            break;
+        default:
+            break;
     }
 }
 

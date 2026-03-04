@@ -12,6 +12,7 @@
 #include "gimbal/keyboard_handler.h"
 #include "gimbal/joystick_handler.h"
 #include "gimbal/command_handler.h"
+#include "gimbal/telemetry_stream.h"
 
 class MainWindow : public QMainWindow
 {
@@ -47,6 +48,10 @@ private slots:
     // Обработка статуса подключения
     void onConnectionStatusChanged(gimbal::ConnectionStatus status);
 
+    // Обработка телеметрии
+    void onTelemetryUpdated(const gimbal::Telemetry& telemetry);
+    void onLaserDistanceUpdated(double distance, bool hasData);
+
 private:
     bool m_fullscreen = false;
     QRect m_normalGeometry;
@@ -57,6 +62,7 @@ private:
     std::unique_ptr<gimbal::ConfigManager> m_configManager;
     std::unique_ptr<gimbal::KeyboardHandler> m_keyboardHandler;
     std::unique_ptr<gimbal::JoystickHandler> m_joystickHandler;
+    std::unique_ptr<gimbal::TelemetryStream> m_telemetryStream;
     gimbal::ControlStream* m_controlStream;  // Не владеющий указатель (singleton)
     gimbal::ConnectionConfig m_config;
 

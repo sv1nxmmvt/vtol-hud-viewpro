@@ -113,6 +113,18 @@ void MainWindow::initGimbalComponents() {
     // Инициализируем CommandHandler для отправки команд
     gimbal::CommandHandler::init(m_gimbal);
 
+    // Инициализируем TelemetryStream для получения телеметрии
+    m_telemetryStream = std::make_unique<gimbal::TelemetryStream>(this);
+    m_telemetryStream->init(m_gimbal);
+
+    // Подключаемся к сигналу обновления телеметрии
+    connect(m_telemetryStream.get(), &gimbal::TelemetryStream::telemetryUpdated,
+            this, &MainWindow::onTelemetryUpdated);
+
+    // Подключаемся к сигналу дальномера
+    connect(m_telemetryStream.get(), &gimbal::TelemetryStream::laserDistanceUpdated,
+            this, &MainWindow::onLaserDistanceUpdated);
+
     // Загружаем конфигурацию
     auto configOpt = m_configManager->load();
     if (configOpt) {
@@ -163,6 +175,9 @@ void MainWindow::cleanupGimbalComponents() {
     if (m_connectionTimeoutTimer) {
         m_connectionTimeoutTimer->stop();
     }
+
+    // Очищаем телеметрию
+    m_telemetryStream.reset();
 
     // Сначала отключаемся от подвеса, потом освобождаем ресурсы
     if (m_gimbal) {
@@ -419,6 +434,11 @@ void MainWindow::onConnectionStatusChanged(gimbal::ConnectionStatus status)
 
             // Запускаем ControlStream для отправки команд
             startControlStream();
+
+            // Применяем текущее положение оси видео
+            if (m_joystickHandler) {
+                m_joystickHandler->applyCurrentVideoState();
+            }
             break;
         }
 
@@ -483,4 +503,27 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
 void MainWindow::keyReleaseEvent(QKeyEvent* event) {
     // Обработка через event() перехватывает клавиши, здесь только для fallback
     QMainWindow::keyReleaseEvent(event);
+}
+
+// === Обработка телеметрии ===
+
+void MainWindow::onTelemetryUpdated(const gimbal::Telemetry& telemetry) {
+    // Обработка телеметрии
+    // Здесь можно обновлять UI элементы с данными телеметрии
+    static int logCounter = 0;
+    if (++logCounter % 100 == 0) {
+        qDebug() << "[MainWindow] Telemetry update:"
+                 << "yaw=" << telemetry.yaw
+                 << ", pitch=" << telemetry.pitch
+                 << ", zoom=" << telemetry.zoomMagTimes;
+    }
+}
+
+void MainWindow::onLaserDistanceUpdated(double distance, bool hasData) {
+    // Обновляем виджет дальномера
+    if (auto* videoWidget = qobject_cast<VideoWidget*>(centralWidget())) {
+        if (auto* transparentWidget = videoWidget->transparentWidget()) {
+            transparentWidget->setLaserDistance(distance);
+        }
+    }
 }

@@ -77,6 +77,11 @@ public:
      */
     bool isJoystickConnected() const;
 
+    /**
+     * @brief Применить текущее положение оси видео (при подключении)
+     */
+    void applyCurrentVideoState();
+
 private slots:
     /**
      * @brief Периодический опрос джойстиков
@@ -100,6 +105,11 @@ private:
     void handleJoystickState();
 
     /**
+     * @brief Обработать ось 6 (видео источник и PIP)
+     */
+    void handleVideoAxis();
+
+    /**
      * @brief Нормализовать значение оси с учетом мертвой зоны
      * @param value Сырое значение оси (-32768..32767)
      * @return Нормализованное значение (-1.0..1.0 или 0 если в мертвой зоне)
@@ -118,15 +128,31 @@ private:
     // Флаг активности джойстика (оси вне мертвой зоны или кнопки нажаты)
     bool m_joystickActive = false;
 
+    // Предыдущее состояние оси видео (для отслеживания переключений)
+    enum class VideoState {
+        VisiblePipOff,      // < -0.75
+        ThermalPipOff,      // -0.75 .. -0.25
+        Neutral,            // -0.25 .. +0.25
+        VisiblePipOn,       // +0.25 .. +0.75
+        ThermalPipOn        // > +0.75
+    };
+    VideoState m_lastVideoState = VideoState::Neutral;
+
     // Индексы осей и кнопок
     static constexpr int PITCH_AXIS = 4;
     static constexpr int YAW_AXIS = 5;
+    static constexpr int VIDEO_AXIS = 7;  // Ось для управления источником видео и PIP
     static constexpr int ZOOM_IN_BUTTON = 1;
     static constexpr int ZOOM_OUT_BUTTON = 3;
 
     // Скорости управления
     static constexpr int MOVE_SPEED = 2000;
     static constexpr int ZOOM_SPEED = 4;
+
+    // Мертвая зона для дискретных переключений (ось 6)
+    // Центры позиций: -0.75 (низ), 0 (центр), +0.75 (верх)
+    // Зона нечувствительности вокруг каждой позиции: ±0.25
+    static constexpr float VIDEO_DEADZONE = 0.25f;
 };
 
 } // namespace gimbal

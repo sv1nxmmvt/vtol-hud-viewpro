@@ -10,6 +10,7 @@ class HideWidget;
 class ResizeWidget;
 class TelemetryButton;
 class ControlButton;
+class LaserRangeWidget;
 
 class TransparentWidget : public QWidget
 {
@@ -21,6 +22,12 @@ public:
 
     void setFullscreen(bool fullscreen);
     bool isFullscreen() const { return m_fullscreen; }
+
+    /**
+     * @brief Обновить расстояние от лазера
+     * @param distance Расстояние в метрах
+     */
+    void setLaserDistance(double distance);
 
 signals:
     // Режим фиксированного размера
@@ -76,4 +83,7 @@ private:
     // Кнопки управления подвесом
     TelemetryButton* m_telemetryButton = nullptr;
     ControlButton* m_controlButton = nullptr;
+
+    // Виджет дальномера
+    LaserRangeWidget* m_laserRangeWidget = nullptr;
 };

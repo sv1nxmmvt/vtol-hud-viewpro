@@ -5,6 +5,7 @@
 #include "../buttons/connection_button.h"
 #include "../buttons/telemetry_button.h"
 #include "../buttons/control_button.h"
+#include "../lrf/laser_range_widget.h"
 #include <QMouseEvent>
 #include <QPainter>
 #include <QDebug>
@@ -39,6 +40,10 @@ TransparentWidget::TransparentWidget(QWidget *parent)
 
     // Создаём кнопки управления подвесом
     setupGimbalButtons();
+
+    // Создаём виджет дальномера
+    m_laserRangeWidget = new LaserRangeWidget(this);
+    m_laserRangeWidget->hide();
 }
 
 void TransparentWidget::setupWindowButtons()
@@ -375,4 +380,10 @@ void TransparentWidget::resizeEvent(QResizeEvent* event)
     // Обновляем позицию кнопок при изменении размера
     updateWindowButtonsPosition();
     updateGimbalButtonsPosition();
+}
+
+void TransparentWidget::setLaserDistance(double distance) {
+    if (m_laserRangeWidget) {
+        m_laserRangeWidget->setDistance(distance);
+    }
 }
