@@ -113,6 +113,9 @@ void MainWindow::initGimbalComponents() {
     // Инициализируем CommandHandler для отправки команд
     gimbal::CommandHandler::init(m_gimbal);
 
+    // Инициализируем MavlinkStream для получения телеметрии ArduPilot
+    m_mavlinkStream = std::make_unique<gimbal::MavlinkStream>(this);
+    
     // Загружаем конфигурацию
     auto configOpt = m_configManager->load();
     if (configOpt) {
@@ -148,6 +151,18 @@ void MainWindow::initGimbalComponents() {
         }, Qt::QueuedConnection);
     });
 
+    // Подключаемся к сигналу телеметрии ArduPilot
+    connect(m_mavlinkStream.get(), &gimbal::MavlinkStream::telemetryUpdated,
+            this, &MainWindow::onArduPilotTelemetryUpdated);
+
+    // Подключаемся к сигналу статуса вооружения
+    connect(m_mavlinkStream.get(), &gimbal::MavlinkStream::armedChanged,
+            this, &MainWindow::onArmingStatusChanged);
+
+    // Подключаем ArduPilot (UDP порт 14552)
+    qDebug() << "MainWindow: connecting to ArduPilot on UDP 14552...";
+    m_mavlinkStream->connect(14552);
+
     qDebug() << "MainWindow: gimbal components initialized";
 }
 
@@ -162,6 +177,11 @@ void MainWindow::cleanupGimbalComponents() {
 
     if (m_connectionTimeoutTimer) {
         m_connectionTimeoutTimer->stop();
+    }
+
+    // Отключаем ArduPilot
+    if (m_mavlinkStream) {
+        m_mavlinkStream->disconnect();
     }
 
     // Сначала отключаемся от подвеса, потом освобождаем ресурсы
@@ -488,4 +508,30 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
 void MainWindow::keyReleaseEvent(QKeyEvent* event) {
     // Обработка через event() перехватывает клавиши, здесь только для fallback
     QMainWindow::keyReleaseEvent(event);
+}
+
+// === Обработка телеметрии ArduPilot ===
+
+void MainWindow::onArduPilotTelemetryUpdated(const gimbal::MavlinkTelemetry& telemetry) {
+    // Обработка телеметрии от ArduPilot
+    // Здесь можно обновлять UI элементы с данными телеметрии
+    static int logCounter = 0;
+    if (++logCounter % 50 == 0) {
+        qDebug() << "[MainWindow] ArduPilot Telemetry:"
+                 << "pos=[" << telemetry.latitude_deg << "," << telemetry.longitude_deg << "]"
+                 << "alt=" << telemetry.relative_altitude_m << "m"
+                 << "att=[r:" << telemetry.roll_deg << " p:" << telemetry.pitch_deg << " y:" << telemetry.yaw_deg << "]"
+                 << "speed=" << telemetry.speed_m_s << "m/s"
+                 << "bat=" << telemetry.battery_percentage << "%"
+                 << "armed=" << (telemetry.armed ? "YES" : "NO")
+                 << "gps=" << telemetry.gps_fix_type << "(" << telemetry.gps_num_satellites << "sats)"
+                 << "rc=" << (telemetry.rc_available ? "OK" : "NO")
+                 << "mode=" << QString::fromStdString(telemetry.flight_mode);
+    }
+}
+
+void MainWindow::onArmingStatusChanged(bool armed) {
+    qDebug() << "[MainWindow] Arming status changed:" << (armed ? "ARMED" : "DISARMED");
+    // Здесь можно обновлять UI (например, индикатор вооружения)
+    // Статус выводится только при изменении
 }

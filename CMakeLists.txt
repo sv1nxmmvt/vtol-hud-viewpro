@@ -15,6 +15,10 @@ pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0 gstreamer-app-1.0 gstreamer-v
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SDL2 REQUIRED sdl2)
 
+# Поиск MAVSDK
+set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/MAVSDK/cpp/install" ${CMAKE_PREFIX_PATH})
+find_package(MAVSDK REQUIRED)
+
 # Путь к SDK
 set(VIEWLINK_SDK_DIR "${CMAKE_SOURCE_DIR}/sdk")
 
@@ -36,6 +40,7 @@ add_executable(viewpro
     src/gimbal/keyboard_handler.cpp
     src/gimbal/joystick_handler.cpp
     src/gimbal/command_handler.cpp
+    src/gimbal/mavlink_stream.cpp
     src/gimbal/viewlink_stub.cpp
 )
 
@@ -51,6 +56,7 @@ target_link_libraries(viewpro PRIVATE
     ${GSTREAMER_LIBRARIES}
     ${SDL2_LIBRARIES}
     ${VIEWLINK_SDK_DIR}/libViewLink.so
+    MAVSDK::mavsdk
 )
 
 target_link_directories(viewpro PRIVATE
