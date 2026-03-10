@@ -32,4 +32,4 @@ sudo apt install -y \
     libsdl2-2.0-0 \
     libopencv4.5
 
-echo "Все зависимости установлены!"
+echo "Все зависимости установлены."
