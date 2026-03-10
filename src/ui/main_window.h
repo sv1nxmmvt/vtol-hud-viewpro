@@ -5,21 +5,14 @@
 #include <QTimer>
 #include <memory>
 
-#include "gimbal/gimbal.h"
-#include "gimbal/video_stream.h"
-#include "gimbal/config_manager.h"
-#include "gimbal/control_stream.h"
-#include "gimbal/keyboard_handler.h"
-#include "gimbal/joystick_handler.h"
-#include "gimbal/command_handler.h"
-#include "gimbal/mavlink_stream.h"
+#include "gimbal/application_manager.h"
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(gimbal::ApplicationManager* appManager, QWidget *parent = nullptr);
     ~MainWindow() override;
 
     void setFullscreen(bool fullscreen);
@@ -45,9 +38,6 @@ private slots:
     void onFrameReady(const QImage& frame);
     void onVideoError(const QString& error);
 
-    // Обработка статуса подключения
-    void onConnectionStatusChanged(gimbal::ConnectionStatus status);
-
     // Обработка телеметрии ArduPilot
     void onArduPilotTelemetryUpdated(const gimbal::MavlinkTelemetry& telemetry);
 
@@ -58,27 +48,8 @@ private:
     bool m_fullscreen = false;
     QRect m_normalGeometry;
 
-    // Компоненты для работы с подвесом
-    std::shared_ptr<gimbal::Gimbal> m_gimbal;
-    std::unique_ptr<gimbal::VideoStream> m_videoStream;
-    std::unique_ptr<gimbal::ConfigManager> m_configManager;
-    std::unique_ptr<gimbal::KeyboardHandler> m_keyboardHandler;
-    std::unique_ptr<gimbal::JoystickHandler> m_joystickHandler;
-    std::unique_ptr<gimbal::MavlinkStream> m_mavlinkStream;
-    gimbal::ControlStream* m_controlStream;  // Не владеющий указатель (singleton)
-    gimbal::ConnectionConfig m_config;
-
-    bool m_isConnected = false;
-    bool m_connectionPending = false;
-    QTimer* m_connectionTimeoutTimer = nullptr;
-
-    // Инициализация компонентов подвеса
-    void initGimbalComponents();
-    void cleanupGimbalComponents();
-
-    // Подключение/отключение
-    bool connectToGimbal();
-    void disconnectFromGimbal();
+    // Менеджер приложения (не владеем)
+    gimbal::ApplicationManager* m_appManager = nullptr;
 
     // Управление ControlStream
     void startControlStream();
@@ -89,4 +60,7 @@ protected:
     bool event(QEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;
     void keyReleaseEvent(QKeyEvent* event) override;
+    
+    // Обработка закрытия окна
+    void closeEvent(QCloseEvent* event) override;
 };

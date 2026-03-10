@@ -41,6 +41,7 @@ add_executable(viewpro
     src/gimbal/joystick_handler.cpp
     src/gimbal/command_handler.cpp
     src/gimbal/mavlink_stream.cpp
+    src/gimbal/application_manager.cpp
     src/gimbal/viewlink_stub.cpp
 )
 
