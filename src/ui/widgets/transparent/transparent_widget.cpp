@@ -287,8 +287,8 @@ void TransparentWidget::mouseReleaseEvent(QMouseEvent* event)
         
         if (!m_timerExpired) {
             // 1.1 / 2.1) Короткое нажатие - захват цели
-            qDebug() << "[TransparentWidget] -> SHORT PRESS (<200ms) - emitting targetAcquire()";
-            emit targetAcquire();
+            qDebug() << "[TransparentWidget] -> SHORT PRESS (<200ms) - emitting targetAcquire() at" << pos;
+            emit targetAcquire(pos);
         } else if (!m_mouseMoved) {
             // 1.2 / 2.2) Долгое нажатие без движения - отмена захвата
             qDebug() << "[TransparentWidget] -> LONG PRESS without movement (>=200ms, no move) - emitting targetCancel()";

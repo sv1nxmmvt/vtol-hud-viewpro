@@ -30,10 +30,10 @@ public:
 
 signals:
     // Режим фиксированного размера
-    void targetAcquire();      // Короткое нажатие - захват цели
-    void targetCancel();       // Долгое нажатие без движения - отмена захвата
-    void startDrag();          // Долгое нажатие с движением - начало перетаскивания
-    void endDrag();            // Конец перетаскивания
+    void targetAcquire(const QPoint& pos);  // Короткое нажатие - захват цели
+    void targetCancel();                    // Долгое нажатие без движения - отмена захвата
+    void startDrag();                       // Долгое нажатие с движением - начало перетаскивания
+    void endDrag();                         // Конец перетаскивания
 
     // Полноэкранный режим
     void gimbalMove(const QPoint& delta);  // Управление гимбалом

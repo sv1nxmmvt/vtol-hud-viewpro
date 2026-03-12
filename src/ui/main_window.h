@@ -20,10 +20,10 @@ public:
 
 private slots:
     // Обработка сигналов TransparentWidget
-    void onTargetAcquire();      // Захват цели (короткое нажатие)
-    void onTargetCancel();       // Отмена захвата (долгое нажатие без движения)
-    void onStartDrag();          // Начало перетаскивания (режим окна)
-    void onEndDrag();            // Конец перетаскивания (режим окна)
+    void onTargetAcquire(const QPoint& clickPos);  // Захват цели (короткое нажатие)
+    void onTargetCancel();                         // Отмена захвата (долгое нажатие без движения)
+    void onStartDrag();                            // Начало перетаскивания (режим окна)
+    void onEndDrag();                              // Конец перетаскивания (режим окна)
 
     // Обработка сигналов кнопок управления окном
     void onCloseClicked();

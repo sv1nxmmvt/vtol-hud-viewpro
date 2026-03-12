@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QObject>
+#include <QPoint>
 #include <memory>
 
 #include "gimbal.h"
@@ -120,10 +121,11 @@ public:
 
     /**
      * @brief Захватить цель (короткое нажатие)
+     * @param clickPos Позиция клика на экране
      * @param videoWidth Ширина видео
      * @param videoHeight Высота видео
      */
-    static void targetAcquire(int videoWidth, int videoHeight);
+    static void targetAcquire(const QPoint& clickPos, int videoWidth, int videoHeight);
 
     /**
      * @brief Отменить захват цели (долгое нажатие)

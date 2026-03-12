@@ -106,16 +106,16 @@ void MainWindow::setFullscreen(bool fullscreen)
 
 // === Режим фиксированного размера ===
 
-void MainWindow::onTargetAcquire()
+void MainWindow::onTargetAcquire(const QPoint& clickPos)
 {
     qDebug() << "=== MainWindow: onTargetAcquire ===";
     if (auto* videoWidget = qobject_cast<VideoWidget*>(centralWidget())) {
         QSize videoSize = videoWidget->videoSize();
-        qDebug() << "  -> Video size:" << videoSize;
+        qDebug() << "  -> Video size:" << videoSize << ", click at:" << clickPos;
         qDebug() << "  -> Отправка команды на ЗАХВАТ ЦЕЛИ (target acquire command)";
         
         if (m_appManager && m_appManager->isConnected()) {
-            gimbal::CommandHandler::targetAcquire(videoSize.width(), videoSize.height());
+            gimbal::CommandHandler::targetAcquire(clickPos, videoSize.width(), videoSize.height());
         }
     }
 }

@@ -181,18 +181,15 @@ void CommandHandler::trackTarget(int x, int y, int videoWidth, int videoHeight) 
 // Захват цели (target acquire/cancel)
 // ============================================================================
 
-void CommandHandler::targetAcquire(int videoWidth, int videoHeight) {
+void CommandHandler::targetAcquire(const QPoint& clickPos, int videoWidth, int videoHeight) {
     auto gimbal = s_gimbal.lock();
     if (!gimbal) {
         qWarning() << "[CommandHandler] Gimbal not initialized";
         return;
     }
-    // Вычисляем центр экрана
-    int centerX = videoWidth / 2;
-    int centerY = videoHeight / 2;
-    qDebug() << "[CommandHandler] Target acquire: center (" << centerX << ", " << centerY 
+    qDebug() << "[CommandHandler] Target acquire: click at (" << clickPos.x() << ", " << clickPos.y()
              << "), video size:" << videoWidth << "x" << videoHeight;
-    gimbal->trackTarget(centerX, centerY, videoWidth, videoHeight);
+    gimbal->trackTarget(clickPos.x(), clickPos.y(), videoWidth, videoHeight);
 }
 
 void CommandHandler::targetCancel() {
