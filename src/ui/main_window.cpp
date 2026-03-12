@@ -1,6 +1,7 @@
 #include "main_window.h"
 #include "widgets/video/video_widget.h"
 #include "widgets/transparent/transparent_widget.h"
+#include "widgets/panels/telemetry_panel.h"
 
 #include <QVBoxLayout>
 #include <QWidget>
@@ -54,6 +55,10 @@ MainWindow::MainWindow(gimbal::ApplicationManager* appManager, QWidget *parent)
             this, &MainWindow::onFrameReady);
     connect(m_appManager->videoStream(), &gimbal::VideoStream::errorOccurred,
             this, &MainWindow::onVideoError);
+
+    // Подключаем сигнал телеметрии ArduPilot для обновления панели
+    connect(m_appManager->mavlinkStream(), &gimbal::MavlinkStream::telemetryUpdated,
+            this, &MainWindow::onArduPilotTelemetryUpdated);
 
     // Устанавливаем фиксированный размер окна
     resize(960, 540);
@@ -161,6 +166,20 @@ void MainWindow::onTelemetryToggled(bool active)
 {
     qDebug() << "=== MainWindow: onTelemetryToggled ===";
     qDebug() << "  -> Телеметрия (telemetry):" << (active ? "ON" : "OFF");
+    
+    // Получаем панель телеметрии и показываем/скрываем её
+    if (auto* videoWidget = qobject_cast<VideoWidget*>(centralWidget())) {
+        if (auto* transparentWidget = videoWidget->transparentWidget()) {
+            if (auto* telemetryPanel = transparentWidget->telemetryPanel()) {
+                if (active) {
+                    telemetryPanel->showPanel();
+                } else {
+                    telemetryPanel->hidePanel();
+                }
+            }
+        }
+    }
+    
     // Обработка через ApplicationManager
 }
 
@@ -249,6 +268,15 @@ void MainWindow::keyReleaseEvent(QKeyEvent* event) {
 // === Обработка телеметрии ArduPilot ===
 
 void MainWindow::onArduPilotTelemetryUpdated(const gimbal::MavlinkTelemetry& telemetry) {
+    // Обновляем панель телеметрии
+    if (auto* videoWidget = qobject_cast<VideoWidget*>(centralWidget())) {
+        if (auto* transparentWidget = videoWidget->transparentWidget()) {
+            if (auto* telemetryPanel = transparentWidget->telemetryPanel()) {
+                telemetryPanel->updateTelemetry(telemetry);
+            }
+        }
+    }
+    
     // Обработка телеметрии от ArduPilot
     // Здесь можно обновлять UI элементы с данными телеметрии
     static int logCounter = 0;

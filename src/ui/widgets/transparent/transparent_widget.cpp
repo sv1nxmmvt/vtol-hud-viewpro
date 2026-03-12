@@ -5,6 +5,7 @@
 #include "../buttons/connection_button.h"
 #include "../buttons/telemetry_button.h"
 #include "../buttons/control_button.h"
+#include "../panels/telemetry_panel.h"
 #include <QMouseEvent>
 #include <QPainter>
 #include <QDebug>
@@ -39,6 +40,9 @@ TransparentWidget::TransparentWidget(QWidget *parent)
 
     // Создаём кнопки управления подвесом
     setupGimbalButtons();
+
+    // Создаём панель телеметрии
+    setupTelemetryPanel();
 }
 
 void TransparentWidget::setupWindowButtons()
@@ -129,6 +133,38 @@ void TransparentWidget::updateGimbalButtonsPosition()
 
     m_telemetryButton->setGeometry(x, startY, buttonSize, buttonSize);
     m_controlButton->setGeometry(x, startY + buttonSize + spacing, buttonSize, buttonSize);
+}
+
+void TransparentWidget::setupTelemetryPanel()
+{
+    // Панель телеметрии
+    m_telemetryPanel = new TelemetryPanel(this);
+    m_telemetryPanel->raise();
+    
+    // Позиционируем панель
+    updateTelemetryPanelPosition();
+    
+    qDebug() << "[TransparentWidget] Telemetry panel created";
+}
+
+void TransparentWidget::updateTelemetryPanelPosition()
+{
+    if (!m_telemetryPanel) {
+        return;
+    }
+
+    int panelWidth = 280;
+    int panelHeight = 320;
+    int rightMargin = 70;  // Отступ справа (кнопки + отступ)
+    int topMargin = 40;    // Отступ сверху
+    
+    // Позиционируем в верхнем правом углу, под кнопками управления окном
+    m_telemetryPanel->setGeometry(
+        width() - panelWidth - rightMargin,
+        topMargin,
+        panelWidth,
+        panelHeight
+    );
 }
 
 void TransparentWidget::setFullscreen(bool fullscreen)
@@ -375,4 +411,5 @@ void TransparentWidget::resizeEvent(QResizeEvent* event)
     // Обновляем позицию кнопок при изменении размера
     updateWindowButtonsPosition();
     updateGimbalButtonsPosition();
+    updateTelemetryPanelPosition();
 }

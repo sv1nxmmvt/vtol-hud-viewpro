@@ -10,6 +10,7 @@ class HideWidget;
 class ResizeWidget;
 class TelemetryButton;
 class ControlButton;
+class TelemetryPanel;
 
 class TransparentWidget : public QWidget
 {
@@ -21,6 +22,11 @@ public:
 
     void setFullscreen(bool fullscreen);
     bool isFullscreen() const { return m_fullscreen; }
+
+    /**
+     * @brief Получить указатель на панель телеметрии
+     */
+    TelemetryPanel* telemetryPanel() const { return m_telemetryPanel; }
 
 signals:
     // Режим фиксированного размера
@@ -55,6 +61,8 @@ private:
     void updateWindowButtonsPosition();
     void setupGimbalButtons();
     void updateGimbalButtonsPosition();
+    void setupTelemetryPanel();
+    void updateTelemetryPanelPosition();
 
     bool m_fullscreen = false;
     QTimer* m_pressTimer = nullptr;
@@ -76,4 +84,7 @@ private:
     // Кнопки управления подвесом
     TelemetryButton* m_telemetryButton = nullptr;
     ControlButton* m_controlButton = nullptr;
+
+    // Панель телеметрии
+    TelemetryPanel* m_telemetryPanel = nullptr;
 };

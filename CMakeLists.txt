@@ -33,6 +33,7 @@ add_executable(viewpro
     src/ui/widgets/buttons/connection_button.cpp
     src/ui/widgets/buttons/telemetry_button.cpp
     src/ui/widgets/buttons/control_button.cpp
+    src/ui/widgets/panels/telemetry_panel.cpp
     src/gimbal/gimbal.cpp
     src/gimbal/video_stream.cpp
     src/gimbal/config_manager.cpp
