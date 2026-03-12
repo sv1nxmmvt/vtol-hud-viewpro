@@ -118,6 +118,18 @@ public:
      */
     static void trackTarget(int x, int y, int videoWidth, int videoHeight);
 
+    /**
+     * @brief Захватить цель (короткое нажатие)
+     * @param videoWidth Ширина видео
+     * @param videoHeight Высота видео
+     */
+    static void targetAcquire(int videoWidth, int videoHeight);
+
+    /**
+     * @brief Отменить захват цели (долгое нажатие)
+     */
+    static void targetCancel();
+
     // =========================================================================
     // Лазерный дальномер
     // =========================================================================

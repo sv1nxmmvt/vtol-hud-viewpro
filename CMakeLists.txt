@@ -7,19 +7,15 @@ set(CMAKE_AUTOMOC ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets Multimedia SerialPort)
 
-# Поиск GStreamer
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0 gstreamer-app-1.0 gstreamer-video-1.0)
 
-# Поиск SDL2
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SDL2 REQUIRED sdl2)
 
-# Поиск MAVSDK
 set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/MAVSDK/cpp/install" ${CMAKE_PREFIX_PATH})
 find_package(MAVSDK REQUIRED)
 
-# Путь к SDK
 set(VIEWLINK_SDK_DIR "${CMAKE_SOURCE_DIR}/sdk")
 
 add_executable(viewpro
@@ -69,7 +65,6 @@ target_link_directories(viewpro PRIVATE
     ${VIEWLINK_SDK_DIR}
 )
 
-# Копирование библиотек MAVSDK и ViewLink в директорию сборки
 file(GLOB MAVSDK_LIBS "${CMAKE_SOURCE_DIR}/MAVSDK/cpp/install/lib/*.so*")
 foreach(lib ${MAVSDK_LIBS})
     file(COPY ${lib} DESTINATION ${CMAKE_BINARY_DIR})
@@ -77,7 +72,6 @@ endforeach()
 
 file(COPY ${VIEWLINK_SDK_DIR}/libViewLink.so DESTINATION ${CMAKE_BINARY_DIR})
 
-# Копирование файла конфигурации и скриптов в директорию сборки
 configure_file(
     ${CMAKE_SOURCE_DIR}/gimbal_config.json
     ${CMAKE_BINARY_DIR}/gimbal_config.json
@@ -93,11 +87,5 @@ configure_file(
 configure_file(
     ${CMAKE_SOURCE_DIR}/setup-ubuntu.sh
     ${CMAKE_BINARY_DIR}/setup-ubuntu.sh
-    COPYONLY
-)
-
-configure_file(
-    ${CMAKE_SOURCE_DIR}/rebuild-mavsdk.fish
-    ${CMAKE_BINARY_DIR}/rebuild-mavsdk.fish
     COPYONLY
 )

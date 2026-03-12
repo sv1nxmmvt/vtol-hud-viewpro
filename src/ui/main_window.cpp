@@ -2,6 +2,7 @@
 #include "widgets/video/video_widget.h"
 #include "widgets/transparent/transparent_widget.h"
 #include "widgets/panels/telemetry_panel.h"
+#include "gimbal/command_handler.h"
 
 #include <QVBoxLayout>
 #include <QWidget>
@@ -108,10 +109,14 @@ void MainWindow::setFullscreen(bool fullscreen)
 void MainWindow::onTargetAcquire()
 {
     qDebug() << "=== MainWindow: onTargetAcquire ===";
-    qDebug() << "  -> Отправка команды на ЗАХВАТ ЦЕЛИ (target acquire command)";
-    if (m_appManager && m_appManager->isConnected()) {
-        // TODO: Здесь будет логика отправки команды на подвес для захвата цели
-        // Например: m_appManager->gimbal()->startTrack();
+    if (auto* videoWidget = qobject_cast<VideoWidget*>(centralWidget())) {
+        QSize videoSize = videoWidget->videoSize();
+        qDebug() << "  -> Video size:" << videoSize;
+        qDebug() << "  -> Отправка команды на ЗАХВАТ ЦЕЛИ (target acquire command)";
+        
+        if (m_appManager && m_appManager->isConnected()) {
+            gimbal::CommandHandler::targetAcquire(videoSize.width(), videoSize.height());
+        }
     }
 }
 
@@ -119,9 +124,9 @@ void MainWindow::onTargetCancel()
 {
     qDebug() << "=== MainWindow: onTargetCancel ===";
     qDebug() << "  -> Отправка команды на ОТМЕНУ ЗАХВАТА (target cancel command)";
+    
     if (m_appManager && m_appManager->isConnected()) {
-        // TODO: Здесь будет логика отмены захвата
-        // Например: m_appManager->gimbal()->stopTrack();
+        gimbal::CommandHandler::targetCancel();
     }
 }
 

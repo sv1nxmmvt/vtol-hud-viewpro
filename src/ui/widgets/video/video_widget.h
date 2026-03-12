@@ -35,6 +35,11 @@ public:
      */
     void clearDisplay();
 
+    /**
+     * @brief Получить текущий размер видео
+     */
+    QSize videoSize() const;
+
 signals:
     void resized();
 

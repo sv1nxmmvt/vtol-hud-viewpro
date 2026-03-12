@@ -7,7 +7,6 @@ set -l MAVSDK_DIR "$SCRIPT_DIR/MAVSDK"
 set -l BUILD_DIR "$MAVSDK_DIR/cpp/build"
 set -l INSTALL_DIR "$MAVSDK_DIR/cpp/install"
 
-# Парсинг аргументов
 set -l DO_CLEAN 0
 set -l CUSTOM_INSTALL ""
 
@@ -16,7 +15,6 @@ for arg in $argv
         case '--clean'
             set DO_CLEAN 1
         case '--install-prefix'
-            # Следующий аргумент - путь
             set CUSTOM_INSTALL $argv[(math (contains -i -- $arg $argv) + 1)]
         case '*'
             echo "Неизвестный аргумент: $arg"
@@ -25,7 +23,6 @@ for arg in $argv
     end
 end
 
-# Если указан кастомный префикс, используем его
 if test -n "$CUSTOM_INSTALL"
     set INSTALL_DIR "$CUSTOM_INSTALL"
 end
@@ -38,16 +35,13 @@ echo "BUILD_DIR:     $BUILD_DIR"
 echo "INSTALL_DIR:   $INSTALL_DIR"
 echo "========================================"
 
-# Очистка, если указано
 if test $DO_CLEAN -eq 1
     echo "[Очистка] Удаление директории сборки..."
     rm -rf "$BUILD_DIR"
 end
 
-# Создание директории сборки
 mkdir -p "$BUILD_DIR"
 
-# Конфигурация
 echo "[Конфигурация] Запуск cmake..."
 cd "$BUILD_DIR" && \
 cmake .. \
@@ -64,7 +58,6 @@ if test $status -ne 0
     exit 1
 end
 
-# Сборка
 echo ""
 echo "[Сборка] Запуск сборки (это может занять несколько минут)..."
 cd "$BUILD_DIR" && \
@@ -77,7 +70,6 @@ if test $status -ne 0
     exit 1
 end
 
-# Установка
 echo ""
 echo "[Установка] Копирование файлов в $INSTALL_DIR..."
 cd "$BUILD_DIR" && \

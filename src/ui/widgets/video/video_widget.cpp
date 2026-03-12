@@ -81,6 +81,17 @@ void VideoWidget::clearDisplay() {
     }
 }
 
+QSize VideoWidget::videoSize() const {
+    if (m_videoLabel) {
+        auto pm = m_videoLabel->pixmap();
+        if (!pm.isNull()) {
+            return pm.size();
+        }
+        return m_videoLabel->size();
+    }
+    return QSize(0, 0);
+}
+
 void VideoWidget::resizeEvent(QResizeEvent* event)
 {
     QWidget::resizeEvent(event);

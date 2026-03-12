@@ -178,6 +178,34 @@ void CommandHandler::trackTarget(int x, int y, int videoWidth, int videoHeight) 
 }
 
 // ============================================================================
+// Захват цели (target acquire/cancel)
+// ============================================================================
+
+void CommandHandler::targetAcquire(int videoWidth, int videoHeight) {
+    auto gimbal = s_gimbal.lock();
+    if (!gimbal) {
+        qWarning() << "[CommandHandler] Gimbal not initialized";
+        return;
+    }
+    // Вычисляем центр экрана
+    int centerX = videoWidth / 2;
+    int centerY = videoHeight / 2;
+    qDebug() << "[CommandHandler] Target acquire: center (" << centerX << ", " << centerY 
+             << "), video size:" << videoWidth << "x" << videoHeight;
+    gimbal->trackTarget(centerX, centerY, videoWidth, videoHeight);
+}
+
+void CommandHandler::targetCancel() {
+    auto gimbal = s_gimbal.lock();
+    if (!gimbal) {
+        qWarning() << "[CommandHandler] Gimbal not initialized";
+        return;
+    }
+    qDebug() << "[CommandHandler] Target cancel: disabling track mode";
+    gimbal->disableTrackMode();
+}
+
+// ============================================================================
 // Лазерный дальномер
 // ============================================================================
 
