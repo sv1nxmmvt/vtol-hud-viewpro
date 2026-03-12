@@ -38,12 +38,6 @@ echo "BUILD_DIR:     $BUILD_DIR"
 echo "INSTALL_DIR:   $INSTALL_DIR"
 echo "========================================"
 
-# Проверка наличия nix
-if not command -v nix >/dev/null 2>&1
-    echo "Ошибка: nix не найден. Установите nix или запустите в nix-окружении."
-    exit 1
-end
-
 # Очистка, если указано
 if test $DO_CLEAN -eq 1
     echo "[Очистка] Удаление директории сборки..."
@@ -55,15 +49,13 @@ mkdir -p "$BUILD_DIR"
 
 # Конфигурация
 echo "[Конфигурация] Запуск cmake..."
-nix develop --command bash -c "
-    cd '$BUILD_DIR' && \
-    cmake .. \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX='$INSTALL_DIR' \
-        -DBUILD_SHARED_LIBS=ON \
-        -DBUILD_TESTING=OFF \
-        -DBUILD_MAVSDK_SERVER=OFF
-"
+cd "$BUILD_DIR" && \
+cmake .. \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" \
+    -DBUILD_SHARED_LIBS=ON \
+    -DBUILD_TESTING=OFF \
+    -DBUILD_MAVSDK_SERVER=OFF
 
 if test $status -ne 0
     echo "========================================"
@@ -75,10 +67,8 @@ end
 # Сборка
 echo ""
 echo "[Сборка] Запуск сборки (это может занять несколько минут)..."
-nix develop --command bash -c "
-    cd '$BUILD_DIR' && \
-    cmake --build . -j'(nproc)'
-"
+cd "$BUILD_DIR" && \
+cmake --build . -j(nproc)
 
 if test $status -ne 0
     echo "========================================"
@@ -90,10 +80,8 @@ end
 # Установка
 echo ""
 echo "[Установка] Копирование файлов в $INSTALL_DIR..."
-nix develop --command bash -c "
-    cd '$BUILD_DIR' && \
-    cmake --install .
-"
+cd "$BUILD_DIR" && \
+cmake --install .
 
 if test $status -ne 0
     echo "========================================"

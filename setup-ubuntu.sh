@@ -1,10 +1,17 @@
 #!/bin/bash
-# Скрипт установки runtime-зависимостей для hud-viewpro на Ubuntu
+# Скрипт установки зависимостей для разработки hud-viewpro на Ubuntu
 
 set -e
 
 echo "Обновление списков пакетов..."
 sudo apt update
+
+echo "Установка инструментов разработки..."
+sudo apt install -y \
+    cmake \
+    ninja-build \
+    build-essential \
+    pkg-config
 
 echo "Установка библиотек Qt6..."
 sudo apt install -y \
@@ -12,7 +19,10 @@ sudo apt install -y \
     libqt6gui6 \
     libqt6widgets6 \
     libqt6multimedia6 \
-    libqt6serialport6
+    libqt6serialport6 \
+    qt6-base-dev \
+    qt6-multimedia-dev \
+    qt6-serialport-dev
 
 echo "Установка GStreamer и плагинов..."
 sudo apt install -y \
@@ -21,15 +31,18 @@ sudo apt install -y \
     gstreamer1.0-plugins-good \
     gstreamer1.0-plugins-bad \
     gstreamer1.0-libav \
-    gstreamer1.0-tools
+    gstreamer1.0-tools \
+    libgstreamer1.0-dev \
+    libgstreamer-plugins-base1.0-dev
 
 echo "Установка дополнительных библиотек..."
 sudo apt install -y \
-    libavcodec60 \
-    libavformat60 \
-    libswscale7 \
+    libavcodec-dev \
+    libavformat-dev \
+    libswscale-dev \
     libgl1 \
     libsdl2-2.0-0 \
-    libopencv4.5
+    libsdl2-dev \
+    libopencv-dev
 
 echo "Все зависимости установлены."

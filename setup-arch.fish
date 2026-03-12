@@ -1,8 +1,17 @@
 #!/usr/bin/env fish
-# Скрипт установки runtime-зависимостей для hud-viewpro на Arch Linux
+# Скрипт установки зависимостей для разработки hud-viewpro на Arch Linux
 
 echo "Обновление базы пакетов..."
 sudo pacman -Sy --noconfirm
+
+echo ""
+echo "Установка инструментов разработки..."
+sudo pacman -S --noconfirm \
+    cmake \
+    ninja \
+    gcc \
+    pkg-config \
+    make
 
 echo ""
 echo "Установка библиотек Qt6..."
