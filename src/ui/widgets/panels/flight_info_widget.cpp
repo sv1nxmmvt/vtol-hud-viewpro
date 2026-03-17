@@ -103,7 +103,7 @@ void FlightInfoWidget::drawFlightData(QPainter& painter)
     // Горизонтальная скорость
     int speed = static_cast<int>(m_telemetry.speed_m_s);
     QString speedStr = formatSpeed(speed);
-    drawParameterRow(painter, "Speed:", speedStr, y);
+    drawParameterRow(painter, "H.Speed:", speedStr, y);
     y += rowHeight;
 
     // Расстояние до дома

@@ -5,8 +5,10 @@
 #include "../buttons/connection_button.h"
 #include "../buttons/telemetry_button.h"
 #include "../buttons/control_button.h"
+#include "../buttons/direction_button.h"
 #include "../panels/telemetry_panel.h"
 #include "../panels/flight_info_widget.h"
+#include "../panels/direction_panel.h"
 #include <QMouseEvent>
 #include <QPainter>
 #include <QDebug>
@@ -111,13 +113,21 @@ void TransparentWidget::setupGimbalButtons()
         emit controlToggled(active);
     });
 
+    // Кнопка направления
+    m_directionButton = new DirectionButton(this);
+    m_directionButton->raise();
+    connect(m_directionButton, &DirectionButton::toggled, this, [this](bool active) {
+        qDebug() << "[TransparentWidget] Direction button toggled:" << active;
+        emit directionToggled(active);
+    });
+
     // Позиционируем кнопки
     updateGimbalButtonsPosition();
 }
 
 void TransparentWidget::updateGimbalButtonsPosition()
 {
-    if (!m_telemetryButton || !m_controlButton) {
+    if (!m_telemetryButton || !m_controlButton || !m_directionButton) {
         return;
     }
 
@@ -126,7 +136,7 @@ void TransparentWidget::updateGimbalButtonsPosition()
     int spacing = 10;
 
     // Вычисляем общую высоту всех кнопок с отступами
-    int totalHeight = buttonSize * 2 + spacing;
+    int totalHeight = buttonSize * 3 + spacing * 2;
 
     // Центрируем по вертикали
     int startY = (height() - totalHeight) / 2;
@@ -134,6 +144,7 @@ void TransparentWidget::updateGimbalButtonsPosition()
 
     m_telemetryButton->setGeometry(x, startY, buttonSize, buttonSize);
     m_controlButton->setGeometry(x, startY + buttonSize + spacing, buttonSize, buttonSize);
+    m_directionButton->setGeometry(x, startY + (buttonSize + spacing) * 2, buttonSize, buttonSize);
 }
 
 void TransparentWidget::setupTelemetryPanel()
@@ -144,6 +155,9 @@ void TransparentWidget::setupTelemetryPanel()
 
     // Позиционируем панель
     updateTelemetryPanelPosition();
+
+    // Панель направления
+    setupDirectionPanel();
 
     // Панель полётной информации
     setupFlightInfoWidget();
@@ -159,7 +173,7 @@ void TransparentWidget::updateTelemetryPanelPosition()
 
     int panelWidth = 280;
     int panelHeight = 260;  // Уменьшенная высота (было 320)
-    int rightMargin = 70;   // Отступ справа (кнопки + отступ)
+    int rightMargin = 50;   // Отступ справа (кнопки + отступ)
     int bottomMargin = 40;  // Отступ снизу (увеличен для смещения вниз)
 
     // Позиционируем в нижнем правом углу
@@ -198,6 +212,37 @@ void TransparentWidget::updateFlightInfoWidgetPosition()
     m_flightInfoWidget->setGeometry(
         width() - panelWidth - rightMargin,
         topMargin,
+        panelWidth,
+        panelHeight
+    );
+}
+
+void TransparentWidget::setupDirectionPanel()
+{
+    // Панель направления
+    m_directionPanel = new DirectionPanel(this);
+    m_directionPanel->raise();
+
+    // Позиционируем панель
+    updateDirectionPanelPosition();
+
+    qDebug() << "[TransparentWidget] Direction panel created";
+}
+
+void TransparentWidget::updateDirectionPanelPosition()
+{
+    if (!m_directionPanel) {
+        return;
+    }
+
+    int panelWidth = 280;  // Горизонтальная панель
+    int panelHeight = 100;
+    int bottomMargin = 20;  // Отступ снизу
+
+    // Позиционируем по центру снизу
+    m_directionPanel->setGeometry(
+        (width() - panelWidth) / 2,
+        height() - panelHeight - bottomMargin,
         panelWidth,
         panelHeight
     );
@@ -242,6 +287,10 @@ void TransparentWidget::mousePressEvent(QMouseEvent* event)
         return;
     }
     if (m_controlButton && m_controlButton->geometry().contains(pos)) {
+        m_pressIgnored = true;
+        return;
+    }
+    if (m_directionButton && m_directionButton->geometry().contains(pos)) {
         m_pressIgnored = true;
         return;
     }
@@ -304,6 +353,11 @@ void TransparentWidget::mouseReleaseEvent(QMouseEvent* event)
         return;
     }
     if (m_controlButton && m_controlButton->geometry().contains(pos)) {
+        m_pressIgnored = true;
+        event->ignore();
+        return;
+    }
+    if (m_directionButton && m_directionButton->geometry().contains(pos)) {
         m_pressIgnored = true;
         event->ignore();
         return;
@@ -383,6 +437,11 @@ void TransparentWidget::mouseMoveEvent(QMouseEvent* event)
         event->ignore();
         return;
     }
+    if (m_directionButton && m_directionButton->geometry().contains(pos)) {
+        m_pressIgnored = true;
+        event->ignore();
+        return;
+    }
 
     // Проверяем, что левая кнопка всё ещё зажата
     if (!(event->buttons() & Qt::LeftButton)) {
@@ -448,5 +507,6 @@ void TransparentWidget::resizeEvent(QResizeEvent* event)
     updateWindowButtonsPosition();
     updateGimbalButtonsPosition();
     updateTelemetryPanelPosition();
+    updateDirectionPanelPosition();
     updateFlightInfoWidgetPosition();
 }

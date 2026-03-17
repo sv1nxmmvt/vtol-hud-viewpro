@@ -10,6 +10,8 @@ class HideWidget;
 class ResizeWidget;
 class TelemetryButton;
 class ControlButton;
+class DirectionButton;
+class DirectionPanel;
 class TelemetryPanel;
 class FlightInfoWidget;
 
@@ -34,6 +36,16 @@ public:
      */
     FlightInfoWidget* flightInfoWidget() const { return m_flightInfoWidget; }
 
+    /**
+     * @brief Получить указатель на кнопку направления
+     */
+    DirectionButton* directionButton() const { return m_directionButton; }
+
+    /**
+     * @brief Получить указатель на панель направления
+     */
+    DirectionPanel* directionPanel() const { return m_directionPanel; }
+
 signals:
     // Режим фиксированного размера
     void targetAcquire(const QPoint& pos);  // Короткое нажатие - захват цели
@@ -53,6 +65,7 @@ signals:
     // Сигналы кнопок управления подвесом
     void telemetryToggled(bool active);
     void controlToggled(bool active);
+    void directionToggled(bool active);
 
 protected:
     bool event(QEvent* event) override;
@@ -69,6 +82,8 @@ private:
     void updateGimbalButtonsPosition();
     void setupTelemetryPanel();
     void updateTelemetryPanelPosition();
+    void setupDirectionPanel();
+    void updateDirectionPanelPosition();
     void setupFlightInfoWidget();
     void updateFlightInfoWidgetPosition();
 
@@ -92,9 +107,13 @@ private:
     // Кнопки управления подвесом
     TelemetryButton* m_telemetryButton = nullptr;
     ControlButton* m_controlButton = nullptr;
+    DirectionButton* m_directionButton = nullptr;
 
     // Панель телеметрии
     TelemetryPanel* m_telemetryPanel = nullptr;
+
+    // Панель направления
+    DirectionPanel* m_directionPanel = nullptr;
 
     // Панель полётной информации
     FlightInfoWidget* m_flightInfoWidget = nullptr;

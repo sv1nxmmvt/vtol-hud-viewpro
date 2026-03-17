@@ -33,6 +33,7 @@ private slots:
     // Обработка сигналов кнопок управления подвесом
     void onTelemetryToggled(bool active);
     void onControlToggled(bool active);
+    void onDirectionToggled(bool active);
 
     // Обработка видеопотока
     void onFrameReady(const QImage& frame);

@@ -3,6 +3,7 @@
 #include "widgets/transparent/transparent_widget.h"
 #include "widgets/panels/telemetry_panel.h"
 #include "widgets/panels/flight_info_widget.h"
+#include "widgets/panels/direction_panel.h"
 #include "gimbal/command_handler.h"
 
 #include <QVBoxLayout>
@@ -51,6 +52,7 @@ MainWindow::MainWindow(gimbal::ApplicationManager* appManager, QWidget *parent)
     // Кнопки управления подвесом
     connect(transparentWidget, &TransparentWidget::telemetryToggled, this, &MainWindow::onTelemetryToggled);
     connect(transparentWidget, &TransparentWidget::controlToggled, this, &MainWindow::onControlToggled);
+    connect(transparentWidget, &TransparentWidget::directionToggled, this, &MainWindow::onDirectionToggled);
 
     // Подключаем сигналы видеопотока
     connect(m_appManager->videoStream(), &gimbal::VideoStream::frameReady,
@@ -196,6 +198,25 @@ void MainWindow::onControlToggled(bool active)
     // TODO: Здесь будет логика включения/выключения управления подвесом
 }
 
+void MainWindow::onDirectionToggled(bool active)
+{
+    qDebug() << "=== MainWindow: onDirectionToggled ===";
+    qDebug() << "  -> Направление (orientation):" << (active ? "ON" : "OFF");
+
+    // Получаем панель направления и показываем/скрываем её
+    if (auto* videoWidget = qobject_cast<VideoWidget*>(centralWidget())) {
+        if (auto* transparentWidget = videoWidget->transparentWidget()) {
+            if (auto* directionPanel = transparentWidget->directionPanel()) {
+                if (active) {
+                    directionPanel->showPanel();
+                } else {
+                    directionPanel->hidePanel();
+                }
+            }
+        }
+    }
+}
+
 // === Обработка видеопотока ===
 
 void MainWindow::onFrameReady(const QImage& frame)
@@ -282,6 +303,9 @@ void MainWindow::onArduPilotTelemetryUpdated(const gimbal::MavlinkTelemetry& tel
             }
             if (auto* flightInfoWidget = transparentWidget->flightInfoWidget()) {
                 flightInfoWidget->updateTelemetry(telemetry);
+            }
+            if (auto* directionPanel = transparentWidget->directionPanel()) {
+                directionPanel->updateTelemetry(telemetry);
             }
         }
     }
