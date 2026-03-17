@@ -6,6 +6,7 @@
 #include "../buttons/telemetry_button.h"
 #include "../buttons/control_button.h"
 #include "../panels/telemetry_panel.h"
+#include "../panels/flight_info_widget.h"
 #include <QMouseEvent>
 #include <QPainter>
 #include <QDebug>
@@ -140,10 +141,13 @@ void TransparentWidget::setupTelemetryPanel()
     // Панель телеметрии
     m_telemetryPanel = new TelemetryPanel(this);
     m_telemetryPanel->raise();
-    
+
     // Позиционируем панель
     updateTelemetryPanelPosition();
-    
+
+    // Панель полётной информации
+    setupFlightInfoWidget();
+
     qDebug() << "[TransparentWidget] Telemetry panel created";
 }
 
@@ -156,10 +160,42 @@ void TransparentWidget::updateTelemetryPanelPosition()
     int panelWidth = 280;
     int panelHeight = 320;
     int rightMargin = 70;  // Отступ справа (кнопки + отступ)
-    int topMargin = 40;    // Отступ сверху
-    
-    // Позиционируем в верхнем правом углу, под кнопками управления окном
+    int bottomMargin = 20; // Отступ снизу
+
+    // Позиционируем в нижнем правом углу
     m_telemetryPanel->setGeometry(
+        width() - panelWidth - rightMargin,
+        height() - panelHeight - bottomMargin,
+        panelWidth,
+        panelHeight
+    );
+}
+
+void TransparentWidget::setupFlightInfoWidget()
+{
+    // Панель полётной информации
+    m_flightInfoWidget = new FlightInfoWidget(this);
+    m_flightInfoWidget->raise();
+
+    // Позиционируем панель
+    updateFlightInfoWidgetPosition();
+
+    qDebug() << "[TransparentWidget] Flight info widget created";
+}
+
+void TransparentWidget::updateFlightInfoWidgetPosition()
+{
+    if (!m_flightInfoWidget) {
+        return;
+    }
+
+    int panelWidth = 220;
+    int panelHeight = 180;
+    int rightMargin = 0;  // Отступ справа (кнопки + отступ)
+    int topMargin = 40;    // Отступ сверху
+
+    // Позиционируем в верхнем правом углу
+    m_flightInfoWidget->setGeometry(
         width() - panelWidth - rightMargin,
         topMargin,
         panelWidth,
@@ -412,4 +448,5 @@ void TransparentWidget::resizeEvent(QResizeEvent* event)
     updateWindowButtonsPosition();
     updateGimbalButtonsPosition();
     updateTelemetryPanelPosition();
+    updateFlightInfoWidgetPosition();
 }

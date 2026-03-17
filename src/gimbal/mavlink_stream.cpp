@@ -4,6 +4,7 @@
 #include <QMutexLocker>
 #include <QThread>
 #include <sstream>
+#include <cmath>
 
 namespace gimbal {
 
@@ -200,6 +201,34 @@ void MavlinkStream::pollTelemetry() {
     auto rc_status = m_telemetry->rc_status();
     telemetry.rc_available = rc_status.is_available;
     telemetry.rc_rssi_percent = rc_status.signal_strength_percent;
+
+    // Home position
+    auto home_pos = m_telemetry->home();
+    telemetry.home_latitude_deg = home_pos.latitude_deg;
+    telemetry.home_longitude_deg = home_pos.longitude_deg;
+    telemetry.home_altitude_m = home_pos.absolute_altitude_m;
+    telemetry.home_position_valid = home_pos.latitude_deg != 0.0 || home_pos.longitude_deg != 0.0;
+
+    // Расстояние до дома (2D, формула гаверсинусов)
+    if (telemetry.home_position_valid) {
+        constexpr double EARTH_RADIUS_M = 6371000.0;
+        double dlat = (telemetry.latitude_deg - telemetry.home_latitude_deg) * M_PI / 180.0;
+        double dlon = (telemetry.longitude_deg - telemetry.home_longitude_deg) * M_PI / 180.0;
+        double lat1 = telemetry.home_latitude_deg * M_PI / 180.0;
+        double lat2 = telemetry.latitude_deg * M_PI / 180.0;
+
+        double a = std::sin(dlat / 2) * std::sin(dlat / 2) +
+                   std::sin(dlon / 2) * std::sin(dlon / 2) * std::cos(lat1) * std::cos(lat2);
+        double c = 2 * std::atan2(std::sqrt(a), std::sqrt(1 - a));
+        telemetry.distance_to_home_m = static_cast<float>(EARTH_RADIUS_M * c);
+    } else {
+        telemetry.distance_to_home_m = 0.0f;
+    }
+
+    // Вертикальная скорость (climb rate, м/с) из position_velocity_ned
+    // down_m_s положительное при движении вниз, поэтому инвертируем для climb rate
+    auto pos_vel = m_telemetry->position_velocity_ned();
+    telemetry.vertical_speed_m_s = -pos_vel.velocity.down_m_s;
 
     telemetry.connected = true;
     telemetry.message_count = m_messageCount;

@@ -2,6 +2,7 @@
 #include "widgets/video/video_widget.h"
 #include "widgets/transparent/transparent_widget.h"
 #include "widgets/panels/telemetry_panel.h"
+#include "widgets/panels/flight_info_widget.h"
 #include "gimbal/command_handler.h"
 
 #include <QVBoxLayout>
@@ -279,9 +280,12 @@ void MainWindow::onArduPilotTelemetryUpdated(const gimbal::MavlinkTelemetry& tel
             if (auto* telemetryPanel = transparentWidget->telemetryPanel()) {
                 telemetryPanel->updateTelemetry(telemetry);
             }
+            if (auto* flightInfoWidget = transparentWidget->flightInfoWidget()) {
+                flightInfoWidget->updateTelemetry(telemetry);
+            }
         }
     }
-    
+
     // Обработка телеметрии от ArduPilot
     // Здесь можно обновлять UI элементы с данными телеметрии
     static int logCounter = 0;

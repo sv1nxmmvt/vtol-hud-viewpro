@@ -225,6 +225,11 @@ QString TelemetryPanel::formatAngle(double angle) const
 
 QString TelemetryPanel::formatBattery(float percent, float voltage, float current) const
 {
+    if (percent < 0.0f) {
+        return QString("N/A  %1V  %2A")
+            .arg(voltage, 0, 'f', 1)
+            .arg(current, 0, 'f', 1);
+    }
     return QString("%1%  %2V  %3A")
         .arg(percent * 100, 0, 'f', 0)
         .arg(voltage, 0, 'f', 1)
@@ -239,6 +244,9 @@ QString TelemetryPanel::formatGpsStatus(int fixType, int satellites, float hdop)
         case 1: fixStr = "No Fix"; break;
         case 2: fixStr = "2D Fix"; break;
         case 3: fixStr = "3D Fix"; break;
+        case 4: fixStr = "DGPS"; break;
+        case 5: fixStr = "RTK Float"; break;
+        case 6: fixStr = "RTK Fixed"; break;
         default: fixStr = "Unknown"; break;
     }
     return QString("%1  (%2 sats, HDOP:%3)")

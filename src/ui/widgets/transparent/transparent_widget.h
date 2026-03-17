@@ -11,6 +11,7 @@ class ResizeWidget;
 class TelemetryButton;
 class ControlButton;
 class TelemetryPanel;
+class FlightInfoWidget;
 
 class TransparentWidget : public QWidget
 {
@@ -27,6 +28,11 @@ public:
      * @brief Получить указатель на панель телеметрии
      */
     TelemetryPanel* telemetryPanel() const { return m_telemetryPanel; }
+
+    /**
+     * @brief Получить указатель на панель полётной информации
+     */
+    FlightInfoWidget* flightInfoWidget() const { return m_flightInfoWidget; }
 
 signals:
     // Режим фиксированного размера
@@ -63,6 +69,8 @@ private:
     void updateGimbalButtonsPosition();
     void setupTelemetryPanel();
     void updateTelemetryPanelPosition();
+    void setupFlightInfoWidget();
+    void updateFlightInfoWidgetPosition();
 
     bool m_fullscreen = false;
     QTimer* m_pressTimer = nullptr;
@@ -87,4 +95,7 @@ private:
 
     // Панель телеметрии
     TelemetryPanel* m_telemetryPanel = nullptr;
+
+    // Панель полётной информации
+    FlightInfoWidget* m_flightInfoWidget = nullptr;
 };

@@ -54,10 +54,22 @@ struct MavlinkTelemetry {
     // RC
     bool rc_available = false;
     float rc_rssi_percent = 0.0f;
-    
+
+    // Home position
+    double home_latitude_deg = 0.0;
+    double home_longitude_deg = 0.0;
+    double home_altitude_m = 0.0;
+    bool home_position_valid = false;
+
+    // Расстояние до дома (2D, в метрах)
+    float distance_to_home_m = 0.0f;
+
+    // Вертикальная скорость (climb rate, м/с)
+    float vertical_speed_m_s = 0.0f;
+
     // Статус подключения
     bool connected = false;
-    
+
     // Сырые MAVLink сообщения (для отладки)
     uint64_t message_count = 0;
 };
