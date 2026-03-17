@@ -16,7 +16,7 @@ FlightInfoWidget::FlightInfoWidget(QWidget *parent)
     setAttribute(Qt::WA_TransparentForMouseEvents, true);  // Чтобы не перехватывать клики
 
     // Устанавливаем размер
-    setFixedSize(220, 180);
+    setFixedSize(220, 210);
 
     qDebug() << "[FlightInfoWidget] Created";
 }
@@ -71,16 +71,16 @@ void FlightInfoWidget::drawBackground(QPainter& painter)
 
 void FlightInfoWidget::drawFlightData(QPainter& painter)
 {
-    // Настройки шрифта - увеличенный размер (18 вместо 9)
+    // Настройки шрифта - уменьшенный на 20% (14 вместо 18)
     QFont font = painter.font();
     font.setFamily("Consolas");  // Моноширинный шрифт для выравнивания
-    font.setPointSize(18);
+    font.setPointSize(14);
     painter.setFont(font);
 
-    int leftMargin = 10;
-    int topMargin = 10;
-    int rowHeight = 36;  // Увеличенный интервал для крупного шрифта
-    int y = topMargin + 15;
+    int leftMargin = 8;   // Уменьшенный отступ на 20%
+    int topMargin = 8;    // Уменьшенный отступ на 20%
+    int rowHeight = 28;   // Уменьшенный интервал на 20%
+    int y = topMargin + 12;
 
     // Высота абсолютная
     int absAlt = static_cast<int>(m_telemetry.absolute_altitude_m);
@@ -98,6 +98,12 @@ void FlightInfoWidget::drawFlightData(QPainter& painter)
     int vertSpeed = static_cast<int>(m_telemetry.vertical_speed_m_s);
     QString vertSpeedStr = formatVerticalSpeed(vertSpeed);
     drawParameterRow(painter, "V.Speed:", vertSpeedStr, y);
+    y += rowHeight;
+
+    // Горизонтальная скорость
+    int speed = static_cast<int>(m_telemetry.speed_m_s);
+    QString speedStr = formatSpeed(speed);
+    drawParameterRow(painter, "Speed:", speedStr, y);
     y += rowHeight;
 
     // Расстояние до дома
@@ -124,6 +130,11 @@ QString FlightInfoWidget::formatAltitude(int altitude) const
 }
 
 QString FlightInfoWidget::formatVerticalSpeed(int speed) const
+{
+    return QString("%1 m/s").arg(speed);
+}
+
+QString FlightInfoWidget::formatSpeed(int speed) const
 {
     return QString("%1 m/s").arg(speed);
 }

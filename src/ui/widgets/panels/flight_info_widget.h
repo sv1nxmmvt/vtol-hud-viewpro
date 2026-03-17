@@ -75,6 +75,11 @@ private:
     QString formatVerticalSpeed(int speed) const;
 
     /**
+     * @brief Форматировать горизонтальную скорость
+     */
+    QString formatSpeed(int speed) const;
+
+    /**
      * @brief Форматировать расстояние
      */
     QString formatDistance(int distance) const;

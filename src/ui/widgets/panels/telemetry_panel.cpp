@@ -19,7 +19,7 @@ TelemetryPanel::TelemetryPanel(QWidget *parent)
     hide();
     
     // Устанавливаем размер
-    setFixedSize(280, 320);
+    setFixedSize(260, 290);
     
     qDebug() << "[TelemetryPanel] Created";
 }
@@ -114,51 +114,46 @@ void TelemetryPanel::drawTelemetryData(QPainter& painter)
     QString gpsStr = formatCoordinates(m_telemetry.latitude_deg, m_telemetry.longitude_deg);
     drawParameterRow(painter, "GPS:", gpsStr, y + 10);
     y += rowHeight;
-    
+
     // Высота
     QString altStr = formatAltitude(m_telemetry.relative_altitude_m);
     drawParameterRow(painter, "Alt:", altStr, y + 10);
     y += rowHeight;
-    
-    // Скорость
-    QString speedStr = formatSpeed(m_telemetry.speed_m_s);
-    drawParameterRow(painter, "Speed:", speedStr, y + 10);
-    y += rowHeight;
-    
+
     // Разделитель
     painter.setPen(QPen(QColor(100, 180, 255, 50), 1));
     painter.drawLine(leftMargin, y + 5, width() - leftMargin, y + 5);
     y += rowHeight - 8;
-    
+
     // Ориентация (Roll, Pitch, Yaw)
     QString rollStr = formatAngle(m_telemetry.roll_deg);
     drawParameterRow(painter, "Roll:", rollStr, y + 10);
     y += rowHeight;
-    
+
     QString pitchStr = formatAngle(m_telemetry.pitch_deg);
     drawParameterRow(painter, "Pitch:", pitchStr, y + 10);
     y += rowHeight;
-    
+
     QString yawStr = formatAngle(m_telemetry.yaw_deg);
     drawParameterRow(painter, "Yaw:", yawStr, y + 10);
     y += rowHeight;
-    
+
     // Разделитель
     painter.setPen(QPen(QColor(100, 180, 255, 50), 1));
     painter.drawLine(leftMargin, y + 5, width() - leftMargin, y + 5);
     y += rowHeight - 8;
     
     // Батарея
-    QString batStr = formatBattery(m_telemetry.battery_percentage, 
-                                    m_telemetry.battery_voltage_v, 
+    QString batStr = formatBattery(m_telemetry.battery_percentage,
+                                    m_telemetry.battery_voltage_v,
                                     m_telemetry.battery_current_a);
     drawParameterRow(painter, "Battery:", batStr, y + 10);
     y += rowHeight;
-    
+
     // Режим полета
     drawParameterRow(painter, "Mode:", QString::fromStdString(m_telemetry.flight_mode), y + 10);
     y += rowHeight;
-    
+
     // Вооружение
     QString armedStr = m_telemetry.armed ? "ARMED" : "DISARMED";
     QColor armedColor = m_telemetry.armed ? QColor(255, 100, 100) : QColor(100, 255, 100);
@@ -166,19 +161,19 @@ void TelemetryPanel::drawTelemetryData(QPainter& painter)
     drawParameterRow(painter, "Arming:", armedStr, y + 10);
     painter.setPen(TEXT_COLOR);  // Возвращаем цвет
     y += rowHeight;
-    
+
     // Разделитель
     painter.setPen(QPen(QColor(100, 180, 255, 50), 1));
     painter.drawLine(leftMargin, y + 5, width() - leftMargin, y + 5);
     y += rowHeight - 8;
-    
+
     // GPS статус
-    QString gpsStatusStr = formatGpsStatus(m_telemetry.gps_fix_type, 
-                                            m_telemetry.gps_num_satellites, 
+    QString gpsStatusStr = formatGpsStatus(m_telemetry.gps_fix_type,
+                                            m_telemetry.gps_num_satellites,
                                             m_telemetry.gps_hdop);
     drawParameterRow(painter, "GPS Status:", gpsStatusStr, y + 10);
     y += rowHeight;
-    
+
     // RC статус
     QString rcStatusStr = formatRcStatus(m_telemetry.rc_available, m_telemetry.rc_rssi_percent);
     drawParameterRow(painter, "RC:", rcStatusStr, y + 10);

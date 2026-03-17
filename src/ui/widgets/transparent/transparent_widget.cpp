@@ -158,9 +158,9 @@ void TransparentWidget::updateTelemetryPanelPosition()
     }
 
     int panelWidth = 280;
-    int panelHeight = 320;
-    int rightMargin = 70;  // Отступ справа (кнопки + отступ)
-    int bottomMargin = 20; // Отступ снизу
+    int panelHeight = 260;  // Уменьшенная высота (было 320)
+    int rightMargin = 70;   // Отступ справа (кнопки + отступ)
+    int bottomMargin = 40;  // Отступ снизу (увеличен для смещения вниз)
 
     // Позиционируем в нижнем правом углу
     m_telemetryPanel->setGeometry(
